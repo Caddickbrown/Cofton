@@ -1,0 +1,21 @@
+name: Sync to cooperativesausage
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger cooperativesausage sync
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.SYNC_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'Caddickbrown',
+              repo: 'cooperativesausage',
+              workflow_id: 'sync-cofton.yml',
+              ref: 'main',
+            });

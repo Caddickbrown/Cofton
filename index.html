@@ -5,23 +5,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cofton — The places we know</title>
 <meta name="description" content="A field guide to Cofton Hackett as we know it.">
+<script>
+try{var t=localStorage.getItem('cofton-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap');
-:root{--paper:#f3f0e8;--ink:#252722;--muted:#716f66;--line:#d8d2c5}
+:root{--paper:#f3f0e8;--ink:#252722;--body:#55554d;--muted:#716f66;--line:#d8d2c5;--card-dim:1;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--card-dim:.82;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--card-dim:.82;color-scheme:dark}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif}
-a{color:inherit;text-decoration:none}.nav{height:76px;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.brand{font-weight:600;letter-spacing:.16em}
-.hero{min-height:78vh;padding:7vw 5vw 5vw;display:grid;grid-template-columns:1.25fr .75fr;gap:7vw;align-items:end}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin-bottom:24px}.hero h1{font-family:'Playfair Display',serif;font-size:clamp(72px,12vw,180px);line-height:.82;font-weight:500;letter-spacing:-.055em;margin:0}.hero-copy{max-width:390px;padding-bottom:9px;font-size:18px;line-height:1.55;color:#55554d}.hero-copy p{margin:0 0 28px}.rule{width:52px;height:1px;background:var(--ink);margin-bottom:28px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;transition:background-color .3s,color .3s}
+a{color:inherit;text-decoration:none}.nav{height:76px;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.brand{font-weight:600;letter-spacing:.16em}.nav-links{display:flex;align-items:center;gap:28px}.theme-toggle{appearance:none;background:none;border:1px solid var(--line);border-radius:999px;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;font-size:11px;padding:7px 14px;cursor:pointer;transition:border-color .2s}.theme-toggle:hover{border-color:var(--ink)}.theme-toggle:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.hero{min-height:78vh;padding:7vw 5vw 5vw;display:grid;grid-template-columns:1.25fr .75fr;gap:7vw;align-items:end}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin-bottom:24px}.hero h1{font-family:'Playfair Display',serif;font-size:clamp(72px,12vw,180px);line-height:.82;font-weight:500;letter-spacing:-.055em;margin:0}.hero-copy{max-width:390px;padding-bottom:9px;font-size:18px;line-height:1.55;color:var(--body)}.hero-copy p{margin:0 0 28px}.rule{width:52px;height:1px;background:var(--ink);margin-bottom:28px}
 .intro{padding:9vw 5vw;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 2fr;gap:8vw}.intro h2{font-family:'Playfair Display',serif;font-size:clamp(38px,5vw,72px);font-weight:500;line-height:1;margin:0;letter-spacing:-.035em}.intro p{max-width:680px;font-size:22px;line-height:1.55;margin:0}
 .places{padding:2vw 5vw 10vw}.section-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:28px}.section-head h2{font-family:'Playfair Display',serif;font-size:42px;font-weight:500;margin:0}.section-head span{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px}.card{position:relative;min-height:390px;overflow:hidden;display:flex;align-items:flex-end;grid-column:span 4}.card:nth-child(1),.card:nth-child(4){grid-column:span 6;min-height:520px}.card:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(25,27,23,.72))}.card-body{position:relative;color:white;padding:28px;width:100%}.card-type{font-size:11px;letter-spacing:.13em;text-transform:uppercase;opacity:.75}.card h3{font-family:'Playfair Display',serif;font-size:38px;font-weight:500;margin:8px 0}.card p{margin:0;max-width:420px;line-height:1.45;opacity:.9}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px}.card{position:relative;min-height:390px;overflow:hidden;display:flex;align-items:flex-end;grid-column:span 4}.card:nth-child(1),.card:nth-child(4){grid-column:span 6;min-height:520px}.card{filter:brightness(var(--card-dim))}.card:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(25,27,23,.72))}.card-body{position:relative;color:white;padding:28px;width:100%}.card-type{font-size:11px;letter-spacing:.13em;text-transform:uppercase;opacity:.75}.card h3{font-family:'Playfair Display',serif;font-size:38px;font-weight:500;margin:8px 0}.card p{margin:0;max-width:420px;line-height:1.45;opacity:.9}
 .c1{background:linear-gradient(135deg,#aeb2a4,#596457)}.c2{background:linear-gradient(135deg,#b6b6a1,#788578)}.c3{background:linear-gradient(135deg,#bcae94,#776f61)}.c4{background:linear-gradient(135deg,#a3ad9c,#52624e)}.c5{background:linear-gradient(135deg,#9ba7a4,#596664)}.c6{background:linear-gradient(135deg,#b5a98e,#776b52)}
 .note{border-top:1px solid var(--line);padding:32px 5vw 70px;display:flex;justify-content:space-between;color:var(--muted);font-size:13px}.note strong{color:var(--ink);font-weight:500}
-@media(max-width:800px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:20vw;gap:60px}.hero h1{font-size:25vw}.intro{grid-template-columns:1fr;gap:40px}.intro p{font-size:19px}.card,.card:nth-child(1),.card:nth-child(4){grid-column:span 12;min-height:420px}.nav{padding:0 6vw}.hero,.intro,.places{padding-left:6vw;padding-right:6vw}.note{padding-left:6vw;padding-right:6vw}}
+@media(max-width:800px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:20vw;gap:60px}.hero h1{font-size:25vw}.intro{grid-template-columns:1fr;gap:40px}.intro p{font-size:19px}.card,.card:nth-child(1),.card:nth-child(4){grid-column:span 12;min-height:420px}.nav{padding:0 6vw}.nav-links{gap:16px}.hero,.intro,.places{padding-left:6vw;padding-right:6vw}.note{padding-left:6vw;padding-right:6vw}}
 </style>
 </head>
 <body>
-<nav class="nav"><a class="brand" href="#">Cofton</a><a href="#places">Explore the places</a></nav>
+<nav class="nav"><a class="brand" href="#">Cofton</a><div class="nav-links"><a href="#places">Explore the places</a><button class="theme-toggle" type="button" aria-label="Toggle dark mode"></button></div></nav>
 <section class="hero"><div><div class="eyebrow">A field guide · Cofton Hackett</div><h1>The places<br>we know.</h1></div><div class="hero-copy"><div class="rule"></div><p>There is the Cofton that appears on a map. And then there is the Cofton we actually know.</p><p>The shortcuts, landmarks, odd names and places that have acquired a meaning of their own.</p></div></section>
 <section class="intro"><h2>Our map is a little different.</h2><p>Some names are official. Some aren't. Some probably started because someone said something once and it stuck. If we say <em>The Triangle</em>, we know where we mean. That's enough.</p></section>
 <section class="places" id="places"><div class="section-head"><h2>Places</h2><span>Six, for now</span></div><div class="grid">
@@ -33,4 +38,19 @@ a{color:inherit;text-decoration:none}.nav{height:76px;padding:0 5vw;display:flex
 <a class="card c6" href="#"><div class="card-body"><div class="card-type">Path</div><h3>Rabbit Trails</h3><p>The cut-through on the way from home towards the Troll Bridge.</p></div></a>
 </div></section>
 <div class="note"><span><strong>Cofton</strong> · A work in progress</span><span>Our version of the place.</span></div>
+<script>
+(function(){
+  var root=document.documentElement,btn=document.querySelector('.theme-toggle'),mq=matchMedia('(prefers-color-scheme: dark)');
+  function current(){return root.dataset.theme||(mq.matches?'dark':'light')}
+  function render(){var d=current()==='dark';btn.textContent=d?'Light':'Dark';btn.setAttribute('aria-pressed',d)}
+  btn.addEventListener('click',function(){
+    var next=current()==='dark'?'light':'dark';
+    root.dataset.theme=next;
+    try{localStorage.setItem('cofton-theme',next)}catch(e){}
+    render();
+  });
+  mq.addEventListener('change',render);
+  render();
+})();
+</script>
 </body></html>

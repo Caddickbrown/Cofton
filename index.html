@@ -10,34 +10,303 @@ try{var t=localStorage.getItem('cofton-theme');if(t==='light'||t==='dark')docume
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap');
-:root{--paper:#f3f0e8;--ink:#252722;--body:#55554d;--muted:#716f66;--line:#d8d2c5;--card-dim:1;color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--card-dim:.82;color-scheme:dark}}
-:root[data-theme="dark"]{--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--card-dim:.82;color-scheme:dark}
+:root{--paper:#f3f0e8;--ink:#252722;--body:#55554d;--muted:#716f66;--line:#d8d2c5;--card-dim:1;color-scheme:light;
+--map-bg:#faf8f2;--land:#8a9b7e;--water:#9db3b8;--water-ink:#6f8a92;--pin:#bb5f3c;
+--map-font:'Playfair Display',Georgia,'Times New Roman',serif}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--card-dim:.82;--map-bg:#1f201c;--water-ink:#8fa9b1;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--card-dim:.82;--map-bg:#1f201c;--water-ink:#8fa9b1;color-scheme:dark}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;transition:background-color .3s,color .3s}
-a{color:inherit;text-decoration:none}.nav{height:76px;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.brand{font-weight:600;letter-spacing:.16em}.nav-links{display:flex;align-items:center;gap:28px}.theme-toggle{appearance:none;background:none;border:1px solid var(--line);border-radius:999px;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;font-size:11px;padding:7px 14px;cursor:pointer;transition:border-color .2s}.theme-toggle:hover{border-color:var(--ink)}.theme-toggle:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+a{color:inherit;text-decoration:none}.nav{height:76px;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.brand{font-weight:600;letter-spacing:.16em}.nav-links{display:flex;align-items:center;gap:28px}.theme-toggle,.mapbtn{appearance:none;background:none;border:1px solid var(--line);border-radius:999px;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;font-size:11px;padding:7px 14px;cursor:pointer;transition:border-color .2s}.theme-toggle:hover,.mapbtn:hover{border-color:var(--ink)}.theme-toggle:focus-visible,.mapbtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .hero{min-height:78vh;padding:7vw 5vw 5vw;display:grid;grid-template-columns:1.25fr .75fr;gap:7vw;align-items:end}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin-bottom:24px}.hero h1{font-family:'Playfair Display',serif;font-size:clamp(72px,12vw,180px);line-height:.82;font-weight:500;letter-spacing:-.055em;margin:0}.hero-copy{max-width:390px;padding-bottom:9px;font-size:18px;line-height:1.55;color:var(--body)}.hero-copy p{margin:0 0 28px}.rule{width:52px;height:1px;background:var(--ink);margin-bottom:28px}
 .intro{padding:9vw 5vw;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 2fr;gap:8vw}.intro h2{font-family:'Playfair Display',serif;font-size:clamp(38px,5vw,72px);font-weight:500;line-height:1;margin:0;letter-spacing:-.035em}.intro p{max-width:680px;font-size:22px;line-height:1.55;margin:0}
+
+/* ---- the map ------------------------------------------------------------ */
+.mapsection{padding:2vw 5vw 6vw}
+.mapbar{display:flex;justify-content:flex-end;margin-bottom:16px}
+.mapbar[hidden]{display:none}
+.modeswitch{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.modeswitch button{appearance:none;background:none;border:0;color:var(--muted);font:inherit;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:7px 16px;cursor:pointer;transition:background-color .2s,color .2s}
+.modeswitch button.is-on{background:var(--ink);color:var(--paper)}
+.mapframe{position:relative;margin:0;aspect-ratio:4/3;background:var(--map-bg);border:1px solid var(--line);overflow:hidden}
+#sketch,#basemap{position:absolute;inset:0;width:100%;height:100%}
+#basemap{opacity:0;pointer-events:none;filter:blur(7px) saturate(.5);transform:scale(1.05);transition:opacity .7s ease,filter .7s ease,transform .7s ease;background:#e8e4d8}
+.mapframe.is-real #basemap{opacity:1;filter:none;transform:none}
+#scenery{transition:opacity .45s ease .2s}
+.mapframe.is-real #scenery{opacity:0;transition:opacity .25s ease}
+.attrib{position:absolute;right:0;bottom:0;font-size:9px;letter-spacing:.04em;background:rgba(255,255,255,.62);color:#333;padding:2px 6px;opacity:0;transition:opacity .3s}
+.mapframe.is-real .attrib{opacity:1}
+figcaption{font-size:13px;color:var(--muted);margin-top:14px;line-height:1.5}
+
+.pin{cursor:pointer;transition:transform .6s cubic-bezier(.4,.1,.2,1)}
+.pin-halo{fill:var(--map-bg);opacity:.95;transition:opacity .2s}
+.pin-dot{fill:var(--pin);transition:fill .2s}
+.pin-num{fill:#fff;font:600 13px var(--map-font)}
+.pin-label{fill:var(--ink);font-family:var(--map-font);font-size:16px;font-weight:500;paint-order:stroke;stroke:var(--map-bg);stroke-width:5px;stroke-linejoin:round}
+.pin:focus{outline:none}
+.pin:focus-visible .pin-halo{opacity:1;stroke:var(--pin);stroke-width:2;stroke-dasharray:4 4}
+.pin.is-active .pin-dot{fill:var(--ink)}
+.pin.is-active .pin-num{fill:var(--paper)}
+.pin.is-active .pin-label{font-weight:600}
+
+/* ---- places ------------------------------------------------------------- */
 .places{padding:2vw 5vw 10vw}.section-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:28px}.section-head h2{font-family:'Playfair Display',serif;font-size:42px;font-weight:500;margin:0}.section-head span{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px}.card{position:relative;min-height:390px;overflow:hidden;display:flex;align-items:flex-end;grid-column:span 4}.card:nth-child(1),.card:nth-child(4){grid-column:span 6;min-height:520px}.card{filter:brightness(var(--card-dim))}.card:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(25,27,23,.72))}.card-body{position:relative;color:white;padding:28px;width:100%}.card-type{font-size:11px;letter-spacing:.13em;text-transform:uppercase;opacity:.75}.card h3{font-family:'Playfair Display',serif;font-size:38px;font-weight:500;margin:8px 0}.card p{margin:0;max-width:420px;line-height:1.45;opacity:.9}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px}.card{position:relative;min-height:390px;overflow:hidden;display:flex;align-items:flex-end;grid-column:span 4;cursor:pointer}.card:nth-child(1),.card:nth-child(4){grid-column:span 6;min-height:520px}.card{filter:brightness(var(--card-dim))}
 .c1{background:linear-gradient(135deg,#aeb2a4,#596457)}.c2{background:linear-gradient(135deg,#b6b6a1,#788578)}.c3{background:linear-gradient(135deg,#bcae94,#776f61)}.c4{background:linear-gradient(135deg,#a3ad9c,#52624e)}.c5{background:linear-gradient(135deg,#9ba7a4,#596664)}.c6{background:linear-gradient(135deg,#b5a98e,#776b52)}
+.card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.card:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,transparent 35%,rgba(25,27,23,.72))}
+.card-body{position:relative;z-index:2;color:white;padding:28px;width:100%}
+.card-type{font-size:11px;letter-spacing:.13em;text-transform:uppercase;opacity:.75}.card h3{font-family:'Playfair Display',serif;font-size:38px;font-weight:500;margin:8px 0}.card p{margin:0;max-width:420px;line-height:1.45;opacity:.9}
+.card-shots{position:absolute;z-index:2;top:18px;right:18px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:rgba(25,27,23,.5);border-radius:999px;padding:5px 11px;backdrop-filter:blur(4px)}
+.card.is-active{outline:2px solid var(--ink);outline-offset:-2px}
+.card:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* ---- lightbox ----------------------------------------------------------- */
+.lightbox{position:fixed;inset:0;z-index:50;display:none;background:rgba(16,17,15,.86);padding:5vh 5vw;overflow:auto}
+.lightbox.is-open{display:flex;align-items:center;justify-content:center}
+.lb-inner{position:relative;display:grid;grid-template-columns:1.4fr .6fr;gap:32px;max-width:1080px;width:100%;background:var(--paper);border:1px solid var(--line);padding:22px}
+.lb-close{position:absolute;z-index:3;top:14px;right:14px;appearance:none;background:var(--paper);border:1px solid var(--line);border-radius:999px;color:inherit;font:inherit;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:7px 14px;cursor:pointer}
+.lb-stage{position:relative;aspect-ratio:4/3;background:var(--map-bg);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.lb-stage img{width:100%;height:100%;object-fit:cover}
+.lb-blank{background-image:linear-gradient(135deg,#aeb2a4,#596457)}
+.lb-thumbs{display:flex;gap:6px;margin-top:8px}
+.lb-thumbs button{flex:1;height:44px;padding:0;border:1px solid var(--line);background:var(--map-bg) center/cover;cursor:pointer;opacity:.55;transition:opacity .2s}
+.lb-thumbs button.is-on{opacity:1;border-color:var(--ink)}
+.lb-meta{display:flex;flex-direction:column;justify-content:flex-end;padding:0 12px 12px 0}
+.lb-meta .card-type{color:var(--muted);opacity:1}
+.lb-meta h3{font-family:'Playfair Display',serif;font-size:40px;font-weight:500;margin:10px 0 14px}
+.lb-meta p{margin:0 0 26px;color:var(--body);line-height:1.55}
+.lb-meta .lb-cap{margin-top:-12px;font-size:14px;color:var(--muted);font-style:italic}
+.lb-meta .mapbtn{align-self:flex-start}
+
 .note{border-top:1px solid var(--line);padding:32px 5vw 70px;display:flex;justify-content:space-between;color:var(--muted);font-size:13px}.note strong{color:var(--ink);font-weight:500}
-@media(max-width:800px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:20vw;gap:60px}.hero h1{font-size:25vw}.intro{grid-template-columns:1fr;gap:40px}.intro p{font-size:19px}.card,.card:nth-child(1),.card:nth-child(4){grid-column:span 12;min-height:420px}.nav{padding:0 6vw}.nav-links{gap:16px}.hero,.intro,.places{padding-left:6vw;padding-right:6vw}.note{padding-left:6vw;padding-right:6vw}}
+
+@media(max-width:800px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:20vw;gap:60px}.hero h1{font-size:25vw}.intro{grid-template-columns:1fr;gap:40px}.intro p{font-size:19px}.card,.card:nth-child(1),.card:nth-child(4){grid-column:span 12;min-height:420px}.nav{padding:0 6vw}.nav-links{gap:16px}.hero,.intro,.places,.mapsection{padding-left:6vw;padding-right:6vw}.note{padding-left:6vw;padding-right:6vw}
+.lb-inner{grid-template-columns:1fr;gap:20px}.lb-meta h3{font-size:32px}.lb-meta{padding:0 4px 4px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.pin,#scenery,#basemap{transition:none!important}}
 </style>
+<link rel="stylesheet" href="map.css">
 </head>
 <body>
 <nav class="nav"><a class="brand" href="#">Cofton</a><div class="nav-links"><a href="#places">Explore the places</a><button class="theme-toggle" type="button" aria-label="Toggle dark mode"></button></div></nav>
+
 <section class="hero"><div><div class="eyebrow">A field guide · Cofton Hackett</div><h1>The places<br>we know.</h1></div><div class="hero-copy"><div class="rule"></div><p>There is the Cofton that appears on a map. And then there is the Cofton we actually know.</p><p>The shortcuts, landmarks, odd names and places that have acquired a meaning of their own.</p></div></section>
+
 <section class="intro"><h2>Our map is a little different.</h2><p>Some names are official. Some aren't. Some probably started because someone said something once and it stuck. If we say <em>The Triangle</em>, we know where we mean. That's enough.</p></section>
-<section class="places" id="places"><div class="section-head"><h2>Places</h2><span>Six, for now</span></div><div class="grid">
-<a class="card c1" href="#"><div class="card-body"><div class="card-type">Landmark</div><h3>The Triangle</h3><p>The triangular junction on the way towards Barnt Green.</p></div></a>
-<a class="card c2" href="#"><div class="card-body"><div class="card-type">Ponds</div><h3>Swan Lake</h3><p>A collection of ponds near the reservoir. Not technically a lake.</p></div></a>
-<a class="card c3" href="#"><div class="card-body"><div class="card-type">Landmark</div><h3>Asket's</h3><p>A place with an older name attached to it: Ben's.</p></div></a>
-<a class="card c4" href="#"><div class="card-body"><div class="card-type">Park</div><h3>Cofton Park</h3><p>The big green one. The obvious one.</p></div></a>
-<a class="card c5" href="#"><div class="card-body"><div class="card-type">Bridge</div><h3>The Troll Bridge</h3><p>A bridge on the estate with considerably more personality than its official name.</p></div></a>
-<a class="card c6" href="#"><div class="card-body"><div class="card-type">Path</div><h3>Rabbit Trails</h3><p>The cut-through on the way from home towards the Troll Bridge.</p></div></a>
-</div></section>
+
+<section class="mapsection" id="map">
+  <div class="mapbar" id="mapbar" hidden>
+    <div class="modeswitch" role="group" aria-label="Map style">
+      <button type="button" data-mode="drawn" class="is-on" aria-pressed="true">Drawn</button>
+      <button type="button" data-mode="real" aria-pressed="false">Real</button>
+    </div>
+  </div>
+  <figure class="mapframe" id="frame">
+    <div id="basemap"></div>
+    <svg id="sketch" viewBox="0 0 800 600" role="group" aria-label="Hand-drawn map of Cofton" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="rough" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" seed="7" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" stroke-width="1.2"/>
+        </pattern>
+        <pattern id="hatch2" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+          <path d="M0 0V6M0 0H6" stroke="currentColor" stroke-width="1.1"/>
+        </pattern>
+      </defs>
+      <g id="scenery" filter="url(#rough)"></g>
+      <g id="pins"></g>
+    </svg>
+    <span class="attrib" id="attrib">© OpenStreetMap contributors</span>
+  </figure>
+  <figcaption id="mapcap">A hand-drawn approximation. Roughly right. Not actually right.</figcaption>
+</section>
+
+<section class="places" id="places">
+  <div class="section-head"><h2>Places</h2><span id="count"></span></div>
+  <div class="grid" id="grid"></div>
+  <noscript><p style="margin-top:24px">This page builds its cards and map from <code>places.js</code>, so it needs JavaScript switched on.</p></noscript>
+</section>
+
 <div class="note"><span><strong>Cofton</strong> · A work in progress</span><span>Our version of the place.</span></div>
+
+<div class="lightbox" id="lightbox"></div>
+
+<script src="places.js"></script>
+<script src="map.js"></script>
+<script>
+(function(){
+  var C = window.COFTON, M = window.CoftonMap;
+  if (!C || !C.places || !C.places.length || !M){
+    var g = document.getElementById('grid');
+    if (g) g.innerHTML = '<p style="grid-column:span 12;color:var(--muted)">' +
+      'Could not read <code>places.js</code> — the cards and map are built from it.</p>';
+    if (window.console) console.error('places.js or map.js did not load, or there are no places.');
+    return;
+  }
+  var places = C.places, SK = M.SK, esc = M.esc, isNum = M.isNum, photosOf = M.photosOf;
+  var fr = M.frame(C.bounds), selected = places[0].slug, tiles = null;
+
+  /* a real position wins, once the drawing has a frame to put it in */
+  function posOf(p){
+    if (fr && isNum(p.lat) && isNum(p.lng)) return fr.toSketch(p.lat, p.lng);
+    return { x: p.map ? p.map.x : SK.w / 2, y: p.map ? p.map.y : SK.h / 2 };
+  }
+
+  /* --- cards ------------------------------------------------------------ */
+  function renderCards(){
+    var WORDS = ['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'];
+    document.getElementById('count').textContent = (WORDS[places.length] || places.length) + ', for now';
+    document.getElementById('grid').innerHTML = places.map(function(p, i){
+      var tone = p.tone || (i % 6) + 1;
+      var shots = photosOf(p);
+      var img = shots.length ? '<img class="card-img" src="' + esc(shots[0].src) + '" alt="" loading="lazy" onerror="this.remove()">' : '';
+      var badge = shots.length > 1 ? '<span class="card-shots">' + shots.length + ' photos</span>' : '';
+      return '<a class="card c' + tone + '" href="#' + esc(p.slug) + '" id="' + esc(p.slug) + '" data-slug="' + esc(p.slug) + '">' +
+        img + '<div class="card-body"><div class="card-type">' + esc(p.type) + '</div>' +
+        '<h3>' + esc(p.name) + '</h3><p>' + esc(p.desc) + '</p></div>' + badge + '</a>';
+    }).join('');
+  }
+
+  /* --- the drawing ------------------------------------------------------ */
+  function renderScenery(){
+    document.getElementById('scenery').innerHTML = M.sceneryMarkup(C.scenery, fr);
+    var land = getComputedStyle(document.documentElement).getPropertyValue('--land').trim();
+    Array.prototype.forEach.call(document.querySelectorAll('#hatch line, #hatch2 path'), function(el){ el.setAttribute('stroke', land); });
+  }
+  function renderPins(){
+    document.getElementById('pins').innerHTML = places.map(function(p, i){
+      var q = posOf(p);
+      var ly = (p.map && p.map.above) ? -26 : 34;
+      return '<g class="pin' + (p.slug === selected ? ' is-active' : '') + '" data-slug="' + esc(p.slug) + '" tabindex="0" role="button" ' +
+        'aria-label="' + esc(p.name) + ' — ' + esc(p.type) + '" style="transform:translate(' + q.x.toFixed(1) + 'px,' + q.y.toFixed(1) + 'px)">' +
+        '<circle class="pin-halo" r="19"></circle><circle class="pin-dot" r="12"></circle>' +
+        '<text class="pin-num" y="4.5" text-anchor="middle">' + (i + 1) + '</text>' +
+        '<text class="pin-label" y="' + ly + '" text-anchor="middle">' + esc(p.name) + '</text></g>';
+    }).join('');
+  }
+
+  /* --- linking ---------------------------------------------------------- */
+  function select(slug){
+    selected = slug;
+    ['pin', 'card'].forEach(function(cls){
+      Array.prototype.forEach.call(document.querySelectorAll('.' + cls + '.is-active'), function(el){ el.classList.remove('is-active'); });
+      var a = document.querySelector('.' + cls + '[data-slug="' + slug + '"]');
+      if (a) a.classList.add('is-active');
+    });
+  }
+  function scrollToPlace(slug){
+    var el = document.getElementById(slug);
+    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    select(slug);
+  }
+
+  /* --- the real map ----------------------------------------------------- */
+  /* Not interactive: it sits exactly under the drawing, framed by the same
+   * bounds, so switching is a dissolve rather than a jump. */
+  var frameEl = document.getElementById('frame');
+  function setMode(m){
+    frameEl.classList.toggle('is-real', m === 'real');
+    Array.prototype.forEach.call(document.querySelectorAll('.modeswitch button'), function(b){
+      var on = b.dataset.mode === m;
+      b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', on);
+    });
+    if (m === 'real' && !tiles){
+      tiles = M.Tiles(document.getElementById('basemap'), {
+        url: C.tiles.url, center: C.center || { lat: 0, lng: 0 }, min: 0, max: 22,
+        onfail: function(){ document.getElementById('mapcap').textContent = 'The real map is not loading — are you offline?'; }
+      });
+      tiles.fit(C.bounds);
+      if (window.ResizeObserver) new ResizeObserver(function(){ tiles.fit(C.bounds); }).observe(frameEl);
+    }
+  }
+  if (fr && C.tiles && C.tiles.url){
+    document.getElementById('mapbar').hidden = false;
+    if (C.tiles.attribution) document.getElementById('attrib').textContent = C.tiles.attribution;
+    document.querySelector('.modeswitch').addEventListener('click', function(e){
+      var b = e.target.closest('button'); if (b) setMode(b.dataset.mode);
+    });
+  }
+
+  /* --- photos ----------------------------------------------------------- */
+  var lb = document.getElementById('lightbox'), lbIndex = 0, lbSlug = null, lastFocus = null;
+
+  function paintBox(){
+    var i = places.findIndex(function(p){ return p.slug === lbSlug; });
+    if (i < 0) return;
+    var p = places[i], shots = photosOf(p);
+    lbIndex = Math.max(0, Math.min(lbIndex, shots.length - 1));
+    var stage = shots.length
+      ? '<img class="lb-img" src="' + esc(shots[lbIndex].src) + '" alt="' + esc(shots[lbIndex].alt || p.name) + '">'
+      : '<div class="lb-blank"></div>';
+    var thumbs = shots.length > 1
+      ? '<div class="lb-thumbs">' + shots.map(function(s, n){
+          return '<button type="button" data-i="' + n + '" class="' + (n === lbIndex ? 'is-on' : '') +
+            '" style="background-image:url(' + esc(JSON.stringify(s.src)) + ')" aria-label="Photo ' + (n + 1) + '"></button>';
+        }).join('') + '</div>' : '';
+    var cap = shots.length && shots[lbIndex].caption ? '<p class="lb-cap">' + esc(shots[lbIndex].caption) + '</p>' : '';
+    lb.innerHTML = '<div class="lb-inner" role="dialog" aria-modal="true" aria-label="' + esc(p.name) + '">' +
+      '<button class="lb-close" type="button" data-close>Close</button>' +
+      '<div><div class="lb-stage">' + stage + '</div>' + thumbs + '</div>' +
+      '<div class="lb-meta"><div class="card-type">' + esc(p.type) + '</div><h3>' + esc(p.name) + '</h3>' +
+      '<p>' + esc(p.desc) + '</p>' + cap + '<button class="mapbtn" type="button" data-goto="' + esc(p.slug) + '">Show on map</button></div></div>';
+  }
+  function openPlace(slug){
+    if (places.findIndex(function(p){ return p.slug === slug; }) < 0) return;
+    lbSlug = slug; lbIndex = 0; lastFocus = document.activeElement;
+    paintBox(); lb.classList.add('is-open'); document.body.style.overflow = 'hidden';
+    var close = lb.querySelector('[data-close]'); if (close) close.focus();
+    select(slug);
+  }
+  function closeBox(){
+    lb.classList.remove('is-open'); lb.innerHTML = ''; document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  lb.addEventListener('click', function(e){
+    if (e.target === lb){ closeBox(); return; }
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.hasAttribute('data-close')) closeBox();
+    else if (t.dataset.i !== undefined){ lbIndex = +t.dataset.i; paintBox(); }
+    else if (t.dataset.goto){
+      var s = t.dataset.goto; closeBox();
+      document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(function(){ select(s); }, 450);
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if (!lb.classList.contains('is-open')) return;
+    if (e.key === 'Escape') closeBox();
+    if (e.key === 'ArrowRight'){ lbIndex++; paintBox(); }
+    if (e.key === 'ArrowLeft'){ lbIndex--; paintBox(); }
+  });
+
+  /* --- wiring ----------------------------------------------------------- */
+  var grid = document.getElementById('grid'), pins = document.getElementById('pins');
+  grid.addEventListener('click', function(e){
+    var card = e.target.closest('.card'); if (!card) return;
+    e.preventDefault(); openPlace(card.dataset.slug);
+  });
+  grid.addEventListener('mouseover', function(e){
+    var card = e.target.closest('.card'); if (card) select(card.dataset.slug);
+  });
+  pins.addEventListener('click', function(e){
+    var pin = e.target.closest('.pin'); if (pin) scrollToPlace(pin.dataset.slug);
+  });
+  pins.addEventListener('mouseover', function(e){
+    var pin = e.target.closest('.pin'); if (pin) select(pin.dataset.slug);
+  });
+  pins.addEventListener('keydown', function(e){
+    var pin = e.target.closest('.pin');
+    if (pin && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); scrollToPlace(pin.dataset.slug); }
+  });
+
+  /* --- go ---------------------------------------------------------------- */
+  renderScenery(); renderCards(); renderPins(); select(selected);
+})();
+</script>
 <script>
 (function(){
   var root=document.documentElement,btn=document.querySelector('.theme-toggle'),mq=matchMedia('(prefers-color-scheme: dark)');

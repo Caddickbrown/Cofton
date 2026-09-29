@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Cofton Editor</title>
+<script>
+try{var t=localStorage.getItem('cofton-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap');
+:root{--paper:#f3f0e8;--ink:#252722;--body:#55554d;--muted:#716f66;--line:#d8d2c5;color-scheme:light;
+--map-bg:#faf8f2;--land:#8a9b7e;--water:#9db3b8;--water-ink:#6f8a92;--pin:#bb5f3c;--warn:#9a5a12;--ok:#4c6b3c;--field:#fffdf8}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--map-bg:#1f201c;--water-ink:#8fa9b1;--warn:#e0a45a;--ok:#9cc08a;--field:#23241f;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1a1b18;--ink:#ece7db;--body:#bdb8aa;--muted:#8f8b80;--line:#33342f;--map-bg:#1f201c;--water-ink:#8fa9b1;--warn:#e0a45a;--ok:#9cc08a;--field:#23241f;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 'DM Sans',sans-serif;display:grid;grid-template-columns:380px minmax(0,1fr);overflow:hidden}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+
+/* ---- sidebar ------------------------------------------------------------- */
+.side{overflow-y:auto;border-right:1px solid var(--line);padding-bottom:60px}
+.side header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--paper);z-index:2}
+.brand{font-weight:600;letter-spacing:.16em;text-transform:uppercase;font-size:13px}
+.brand em{font-style:normal;font-weight:400;color:var(--muted);letter-spacing:.08em}
+.side header a{font-size:12px;color:var(--muted)}
+.side section{padding:18px 20px;border-bottom:1px solid var(--line)}
+.side section[hidden]{display:none}
+h2{font-family:'Playfair Display',serif;font-weight:500;font-size:22px;margin:0 0 8px;display:flex;align-items:baseline;gap:10px}
+h2 span{font:500 11px 'DM Sans',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.note{color:var(--muted);font-size:13px;margin:0 0 12px}
+.note b{color:var(--ink);font-weight:500}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.btn{appearance:none;background:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12px;cursor:pointer;transition:border-color .2s,background-color .2s}
+.btn:hover{border-color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn.danger{color:var(--pin)}
+.btn.armed{background:var(--pin);border-color:var(--pin);color:#fff}
+.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{flex:1;appearance:none;background:none;border:0;padding:8px 6px;font-size:12px;cursor:pointer;color:var(--muted)}
+.seg button.is-on{background:var(--ink);color:var(--paper)}
+.seg kbd{font:inherit;opacity:.55;margin-left:4px}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
+.field{display:block;margin:0 0 10px}
+.field > span{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.field input,.field textarea,.field select,.inp{width:100%;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.field textarea{resize:vertical;min-height:62px}
+.field input:focus,.field textarea:focus,.inp:focus{outline:none;border-color:var(--ink)}
+.range{display:flex;align-items:center;gap:10px;font-size:13px}
+.range input{flex:1}
+.banner{margin:14px 20px 0;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--pin);font-size:13px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.banner[hidden]{display:none}
+
+.kinds{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:10px 0}
+.kinds small{color:var(--muted)}
+
+.plist{list-style:none;margin:0 0 10px;padding:0}
+.plist li{display:flex;align-items:center;gap:2px;border-bottom:1px solid var(--line)}
+.plist .pl{flex:1;display:flex;gap:10px;align-items:center;appearance:none;background:none;border:0;text-align:left;padding:8px 4px;cursor:pointer}
+.plist .num{width:22px;height:22px;border-radius:50%;background:var(--pin);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.plist .off .num{background:none;color:var(--muted);border:1.5px dashed var(--muted)}
+.plist .st{margin-left:auto;font-size:11px;color:var(--muted)}
+.plist li.is-sel{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.plist .mv{appearance:none;background:none;border:0;color:var(--muted);cursor:pointer;padding:6px 5px;font-size:12px}
+.plist .mv:hover{color:var(--ink)}
+.pform{border:1px solid var(--line);padding:14px;margin-top:4px;background:color-mix(in srgb,var(--map-bg) 60%,transparent)}
+.pform h3{margin:0 0 12px;font:500 11px 'DM Sans',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 8px}
+.ph{border:1px solid var(--line);background:var(--map-bg);position:relative}
+.ph img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.ph .tag{position:absolute;top:5px;left:5px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:rgba(25,27,23,.6);color:#fff;padding:2px 7px;border-radius:999px}
+.ph .bar{display:flex;justify-content:space-between;padding:4px}
+.ph .bar button{appearance:none;background:none;border:0;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 4px}
+.ph .bar button:hover{color:var(--ink)}
+.ph input{width:100%;border:0;border-top:1px solid var(--line);background:var(--field);padding:5px 6px;font-size:12px}
+.drop{display:block;border:1.5px dashed var(--line);padding:16px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;transition:border-color .2s,background-color .2s}
+.drop:hover,.drop.over{border-color:var(--ink);color:var(--ink)}
+.drop u{color:var(--ink)}
+
+details summary{cursor:pointer;font-size:13px;margin:6px 0}
+.status{font-size:13px;margin:10px 0 0;min-height:18px}
+.status.warn{color:var(--warn)}
+.status.ok{color:var(--ok)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pin);margin-right:6px;vertical-align:1px}
+code{font-size:12px}
+
+/* ---- the stage ----------------------------------------------------------- */
+.stagewrap{display:flex;align-items:center;justify-content:center;padding:16px;min-width:0;min-height:0;position:relative}
+.stage{position:relative;width:min(100%,calc((100vh - 32px) * 4 / 3));aspect-ratio:4/3;border:1px solid var(--line);overflow:hidden;touch-action:none;user-select:none;cursor:grab;background:var(--map-bg)}
+.stage.t-pin,.stage.t-draw{cursor:crosshair}
+.stage.t-select{cursor:default}
+.stage.grabbing{cursor:grabbing}
+/* the map always uses the light palette, so the drawing reads on the tiles */
+.stage{--ink:#252722;--muted:#716f66;--line:#d8d2c5;--map-bg:#faf8f2;--water-ink:#6f8a92;color-scheme:light}
+#basemap{position:absolute;inset:0;background:var(--map-bg)}
+#ov{position:absolute;overflow:visible;pointer-events:none}
+#ov.hidden{display:none}
+#ov .sc path{vector-effect:non-scaling-stroke}
+.stage.t-select #ov .sc path:not(.echo){pointer-events:visiblePainted;cursor:pointer}
+#ov .sc.is-sel path:not(.hit):not(.echo){stroke:var(--pin)!important;stroke-width:4!important}
+#frameBox{position:absolute;pointer-events:none;border:1.5px dashed var(--pin);box-shadow:0 0 0 100vmax rgba(20,20,18,.22)}
+#marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#marks .draft{fill:none;stroke:var(--pin);stroke-width:2.5;stroke-dasharray:6 4}
+#marks .draftfill{fill:var(--pin);fill-opacity:.12;stroke:none}
+#marks .dot{fill:var(--pin)}
+#marks .h{fill:#fff;stroke:var(--pin);stroke-width:2;pointer-events:auto;cursor:move}
+#marks .h:hover{fill:var(--pin)}
+#pins{position:absolute;inset:0;pointer-events:none}
+.epin{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:move;display:flex;align-items:center}
+.epin b{width:26px;height:26px;border-radius:50%;background:var(--pin);color:#fff;font:600 12px 'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(255,255,255,.85)}
+.epin i{position:absolute;left:32px;white-space:nowrap;font:500 12px 'DM Sans',sans-serif;font-style:normal;background:rgba(255,255,255,.85);color:#252722;padding:1px 6px;border-radius:3px}
+.epin.ghost b{background:rgba(255,255,255,.7);color:#3a3a34;border:2px dashed #6f6f66;box-shadow:none}
+.epin.is-sel b{background:var(--ink);color:var(--paper);transform:scale(1.15)}
+.epin.ghost.is-sel b{background:#fff;color:#252722;border-style:solid;border-color:#252722}
+.hint{position:absolute;left:12px;top:12px;max-width:calc(100% - 70px);font-size:12px;background:rgba(255,255,255,.9);color:#2c2c28;padding:7px 11px;pointer-events:none;border-radius:3px}
+.hint b{font-weight:600}
+.toast{position:absolute;left:50%;bottom:16px;transform:translate(-50%,10px);background:#252722;color:#f3f0e8;font-size:13px;padding:8px 14px;border-radius:999px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:80%;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.attrib{position:absolute;right:0;bottom:0;font-size:9px;background:rgba(255,255,255,.62);color:#333;padding:2px 6px}
+.zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:32px;height:32px;border-radius:50%;border:1px solid #d8d2c5;background:rgba(255,255,255,.92);color:#252722;font-size:16px;cursor:pointer}
+
+@media(max-width:900px){
+  body{grid-template-columns:1fr;grid-template-rows:auto auto;overflow:auto;height:auto}
+  .side{border-right:0;overflow:visible;order:2}
+  .stagewrap{order:1;padding:8px}
+  .stage{width:100%}
+}
+</style>
+<link rel="stylesheet" href="map.css">
+</head>
+<body>
+<aside class="side">
+  <header><span class="brand">Cofton <em>Editor</em></span><a href="index.html" target="_blank" rel="noopener">View the site ↗</a></header>
+  <div class="banner" id="banner" hidden><span id="bannerText"></span><button class="btn" type="button" id="bannerBtn"></button></div>
+
+  <section>
+    <div class="seg" role="group" aria-label="Tool" id="tools">
+      <button type="button" data-tool="pan" class="is-on">Move<kbd>1</kbd></button>
+      <button type="button" data-tool="pin">Pin<kbd>2</kbd></button>
+      <button type="button" data-tool="draw">Draw<kbd>3</kbd></button>
+      <button type="button" data-tool="select">Select<kbd>4</kbd></button>
+    </div>
+    <div class="row" style="margin-bottom:0">
+      <button class="btn" type="button" id="undo">Undo</button>
+      <span class="note" style="margin:0">Ctrl/⌘ Z also works</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Frame <span>1</span></h2>
+    <p class="note" id="frameNote"></p>
+    <div class="row">
+      <button class="btn primary" type="button" id="useView">Use this view as the frame</button>
+      <button class="btn" type="button" id="goFrame">Back to the frame</button>
+    </div>
+    <div class="range"><span>Real map</span><input type="range" id="tileOp" min="0" max="100" value="100" aria-label="Real map opacity"></div>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="showDraw" checked> Drawing</label>
+      <label class="chk"><input type="checkbox" id="wobble"> Wobble, as the site draws it</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Trace <span>2</span></h2>
+    <p class="note">Fetch the real roads, paths, water and green inside the frame from OpenStreetMap. Keep the kinds you want, then tidy up with <b>Select</b> and <b>Draw</b>.</p>
+    <div class="row"><button class="btn" type="button" id="fetchOsm">Fetch from OpenStreetMap</button></div>
+    <div id="osmOut"></div>
+    <div id="legacyOut"></div>
+  </section>
+
+  <section id="lineSec" hidden>
+    <h2 id="lineTitle">Line</h2>
+    <div id="lineOut"></div>
+  </section>
+
+  <section>
+    <h2>Places <span>3</span></h2>
+    <ol class="plist" id="plist"></ol>
+    <div class="row"><button class="btn" type="button" id="addPlace">Add a place</button></div>
+    <div id="pform"></div>
+  </section>
+
+  <section>
+    <h2>Publish <span>4</span></h2>
+    <p class="note" id="pubState"></p>
+    <details id="ghbox">
+      <summary>GitHub connection</summary>
+      <label class="field"><span>Repository</span><input id="ghRepo" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Branch</span><input id="ghBranch" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Token</span><input id="ghToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
+      <p class="note">Make a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a>:
+        <b>Only select repositories</b> → this repo, and <b>Contents: Read and write</b>. It is kept in this browser only.</p>
+      <div class="row"><button class="btn" type="button" id="ghSave">Save and test</button><button class="btn" type="button" id="ghForget">Forget token</button></div>
+    </details>
+    <label class="field" style="margin-top:10px"><span>What changed?</span><input id="msg" placeholder="Map: trace the roads, add photos of the Triangle"></label>
+    <div class="row">
+      <button class="btn primary" type="button" id="publish">Publish to GitHub</button>
+      <button class="btn" type="button" id="download">Download places.js</button>
+      <button class="btn" type="button" id="loadRemote">Load latest from GitHub</button>
+    </div>
+    <p class="status" id="pubStatus" role="status"></p>
+  </section>
+</aside>
+
+<main class="stagewrap">
+  <div class="stage t-pan" id="stage">
+    <div id="basemap"></div>
+    <svg id="ov" viewBox="0 0 800 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="rough" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" seed="7" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" stroke-width="1.2"/>
+        </pattern>
+        <pattern id="hatch2" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+          <path d="M0 0V6M0 0H6" stroke="currentColor" stroke-width="1.1"/>
+        </pattern>
+      </defs>
+      <g id="scenery"></g>
+    </svg>
+    <div id="frameBox"></div>
+    <svg id="marks" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="pins"></div>
+    <div class="hint" id="hint"></div>
+    <div class="zoom"><button type="button" id="zin" aria-label="Zoom in">+</button><button type="button" id="zout" aria-label="Zoom out">−</button></div>
+    <div class="toast" id="toast" role="status"></div>
+    <span class="attrib" id="attrib">© OpenStreetMap contributors</span>
+  </div>
+</main>
+
+<script src="places.js"></script>
+<script src="map.js"></script>
+<script>
+(function(){
+  var M = window.CoftonMap, SK = M.SK, esc = M.esc, isNum = M.isNum;
+  function $(id){ return document.getElementById(id); }
+  function clone(v){ return JSON.parse(JSON.stringify(v)); }
+  function read(k, fb){ try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; } catch(e){ return fb; } }
+  function write(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+  function forget(k){ try { localStorage.removeItem(k); } catch(e){} }
+  function r5(v){ return Math.round(v * 1e5) / 1e5; }
+  function r6(v){ return Math.round(v * 1e6) / 1e6; }
+
+  if (!window.COFTON || !window.COFTON.places){
+    document.body.innerHTML = '<p style="padding:40px">Could not read <code>places.js</code>. Serve this folder (for example <code>python3 -m http.server</code>) and open <code>edit.html</code> from it.</p>';
+    return;
+  }
+
+  var OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  var KINDS = [
+    ['road', 'Road'], ['lane', 'Lane / street'], ['track', 'Path / track'], ['rail', 'Railway'],
+    ['stream', 'Stream / river'], ['water', 'Water'], ['green', 'Park / grass'], ['wood', 'Woodland'],
+    ['building', 'Building'], ['contour', 'Contour'], ['bridge', 'Bridge']
+  ];
+  var AREAS = { water: 1, green: 1, wood: 1, building: 1 };
+  var PENCIL = { road: 1, lane: 1, stream: 1, rail: 1 };
+  function kindName(k){ for (var i = 0; i < KINDS.length; i++) if (KINDS[i][0] === k) return KINDS[i][1]; return k; }
+
+  /* --- state -------------------------------------------------------------- */
+  /* S is the working copy of places.js. It is autosaved as a draft, so a
+   * reload never loses work; publishing clears the draft. */
+  var S = clone(window.COFTON), baseline = null, removed = [], pending = {}, history = [];
+  var tool = 'pan', selPlace = S.places.length ? S.places[0].slug : null, selItem = -1, draft = null, osm = null;
+  var GH = { repo: 'Caddickbrown/cofton', branch: 'main', token: '' };
+  var saved = read('cofton-gh', {});
+  for (var gk in saved) if (saved[gk]) GH[gk] = saved[gk];
+
+  var stored = read('cofton-draft', null);
+  if (stored && stored.data && stored.data.places){
+    S = stored.data; removed = stored.removed || []; baseline = stored.base == null ? null : stored.base;
+    banner('Picked up your unpublished changes from ' + ago(stored.at) + '.', 'Discard them', discardDraft);
+  } else {
+    /* pins dropped on the old version of the public page */
+    var old = read('cofton-pins', null), n = 0;
+    if (old) S.places.forEach(function(p){ var o = old[p.slug]; if (o && isNum(o.lat) && isNum(o.lng)){ p.lat = o.lat; p.lng = o.lng; n++; } });
+    if (n) banner('Picked up ' + n + ' pins you dropped on the old map page. Publish to keep them.', 'OK', function(){ $('banner').hidden = true; });
+  }
+  if (baseline === null){
+    fetch('places.js', { cache: 'no-store' }).then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(t){ if (t !== null && baseline === null){ baseline = t; renderPublish(); } }).catch(function(){});
+  }
+  if (!S.scenery) S.scenery = [];
+  if (!S.tiles || !S.tiles.url) S.tiles = { url: OSM_TILES, attribution: '© OpenStreetMap contributors' };
+
+  function ago(t){
+    var m = Math.round((Date.now() - (t || 0)) / 60000);
+    if (m < 1) return 'just now'; if (m < 60) return m + ' min ago';
+    var h = Math.round(m / 60); if (h < 48) return h + ' hours ago';
+    return Math.round(h / 24) + ' days ago';
+  }
+  function banner(text, label, fn){
+    $('bannerText').textContent = text; $('bannerBtn').textContent = label;
+    $('bannerBtn').onclick = fn; $('banner').hidden = false;
+  }
+
+  var draftTimer = null;
+  function saveDraft(){
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(function(){
+      if (!write('cofton-draft', { at: Date.now(), base: baseline, data: S, removed: removed }))
+        say('Could not save a draft in this browser — publish or download before closing.');
+    }, 300);
+    renderPublish();
+  }
+  function discardDraft(){
+    if (!armed('discard', $('bannerBtn'), 'Click again to discard')) return;
+    forget('cofton-draft'); idbClear().then(function(){ location.reload(); }, function(){ location.reload(); });
+  }
+
+  /* one-click-then-confirm, without browser dialogs */
+  var armedKey = null, armedTimer = null;
+  function armed(key, btn, text){
+    if (armedKey === key){ armedKey = null; clearTimeout(armedTimer); return true; }
+    armedKey = key;
+    var was = btn.textContent;
+    btn.textContent = text; btn.classList.add('armed');
+    clearTimeout(armedTimer);
+    armedTimer = setTimeout(function(){ armedKey = null; btn.textContent = was; btn.classList.remove('armed'); }, 3500);
+    return false;
+  }
+
+  /* history: snapshot before every change */
+  function snapshot(){
+    history.push(JSON.stringify({ S: S, removed: removed }));
+    if (history.length > 80) history.shift();
+  }
+  function change(fn, keepForm){ snapshot(); fn(); refresh(keepForm); }
+  function undo(){
+    var h = history.pop();
+    if (!h){ say('Nothing to undo.'); return; }
+    var o = JSON.parse(h);
+    S = o.S; removed = o.removed; selItem = -1; draft = null;
+    if (!placeBySlug(selPlace)) selPlace = S.places.length ? S.places[0].slug : null;
+    refresh(); say('Undone.');
+  }
+  function refresh(keepForm){ saveDraft(); paint(keepForm); }
+  function paint(keepForm){
+    drawScenery(); layout(); renderFrame(); renderOsm(); renderLine(); renderList();
+    if (!keepForm) renderForm();
+    updateHint();
+  }
+
+  /* --- photos waiting to upload, kept in IndexedDB so a reload keeps them -- */
+  var dbp = null;
+  function db(){
+    if (!dbp) dbp = new Promise(function(res, rej){
+      var r = indexedDB.open('cofton-editor', 1);
+      r.onupgradeneeded = function(){ r.result.createObjectStore('photos'); };
+      r.onsuccess = function(){ res(r.result); };
+      r.onerror = function(){ rej(r.error); };
+    });
+    return dbp;
+  }
+  function idb(mode, fn){
+    return db().then(function(d){ return new Promise(function(res, rej){
+      var tx = d.transaction('photos', mode), out = fn(tx.objectStore('photos'));
+      tx.oncomplete = function(){ res(out); };
+      tx.onerror = function(){ rej(tx.error); };
+    }); });
+  }
+  function idbPut(path, blob){ return idb('readwrite', function(st){ st.put(blob, path); }).catch(function(){}); }
+  function idbClear(){ return idb('readwrite', function(st){ st.clear(); }); }
+  function loadPending(){
+    return idb('readonly', function(st){ return { keys: st.getAllKeys(), vals: st.getAll() }; }).then(function(o){
+      o.keys.result.forEach(function(k, i){ pending[k] = { blob: o.vals.result[i], url: URL.createObjectURL(o.vals.result[i]) }; });
+    }).catch(function(){});
+  }
+  function photoSrc(src){ return pending[src] ? pending[src].url : src; }
+  function referenced(){
+    var set = {};
+    S.places.forEach(function(p){ M.photosOf(p).forEach(function(ph){ set[ph.src] = 1; }); });
+    return set;
+  }
+  function toUpload(){
+    var refs = referenced();
+    return Object.keys(pending).filter(function(k){ return refs[k] && !pending[k].done; });
+  }
+
+  /* --- the map ------------------------------------------------------------ */
+  var stage = $('stage'), base = $('basemap'), ov = $('ov'), marks = $('marks'), pinsEl = $('pins');
+  if (S.tiles.attribution) $('attrib').textContent = S.tiles.attribution;
+  var start = S.center || { lat: 52.373, lng: -1.993 };
+  var T = M.Tiles(base, {
+    url: S.tiles.url, center: start, zoom: (S.zoom && S.zoom.start) || 15, min: 3, max: 20,
+    onrender: layout,
+    onfail: function(){ say('The real map is not loading — are you online?'); }
+  });
+
+  function frameNow(){ return M.frame(S.bounds); }
+
+  function drawScenery(){
+    var g = $('scenery');
+    g.innerHTML = M.sceneryMarkup(S.scenery, frameNow(), { hit: true, selected: selItem });
+    if ($('wobble').checked) g.setAttribute('filter', 'url(#rough)'); else g.removeAttribute('filter');
+    var land = getComputedStyle(document.documentElement).getPropertyValue('--land').trim();
+    Array.prototype.forEach.call(document.querySelectorAll('#hatch line, #hatch2 path'), function(el){ el.setAttribute('stroke', land); });
+  }
+
+  /* where everything sits on screen — runs on every pan and zoom */
+  function layout(){
+    var fr = frameNow();
+    if (fr){
+      var a = fr.toLatLng(0, 0), b = fr.toLatLng(SK.w, SK.h), pa = T.project(a.lat, a.lng), pb = T.project(b.lat, b.lng);
+      ov.style.display = ''; ov.style.left = pa.x + 'px'; ov.style.top = pa.y + 'px';
+      ov.style.width = (pb.x - pa.x) + 'px'; ov.style.height = (pb.y - pa.y) + 'px';
+      var nw = T.project(S.bounds.north, S.bounds.west), se = T.project(S.bounds.south, S.bounds.east), fb = $('frameBox');
+      fb.style.display = ''; fb.style.left = nw.x + 'px'; fb.style.top = nw.y + 'px';
+      fb.style.width = (se.x - nw.x) + 'px'; fb.style.height = (se.y - nw.y) + 'px';
+    } else {
+      ov.style.display = 'none'; $('frameBox').style.display = 'none';
+    }
+    drawPins(); drawMarks();
+  }
+
+  function pinSpot(p, fr){
+    if (isNum(p.lat) && isNum(p.lng)) return { lat: p.lat, lng: p.lng, ghost: false };
+    if (fr && p.map){ var ll = fr.toLatLng(p.map.x, p.map.y); return { lat: ll.lat, lng: ll.lng, ghost: true }; }
+    return null;
+  }
+  function drawPins(){
+    if (drag && drag.kind === 'pin') return;
+    var fr = frameNow();
+    pinsEl.innerHTML = S.places.map(function(p, i){
+      var s = pinSpot(p, fr);
+      if (!s) return '';
+      var q = T.project(s.lat, s.lng);
+      return '<span class="epin' + (s.ghost ? ' ghost' : '') + (p.slug === selPlace ? ' is-sel' : '') + '" data-slug="' + esc(p.slug) +
+        '" style="left:' + q.x.toFixed(1) + 'px;top:' + q.y.toFixed(1) + 'px" title="' + esc(p.name) + (s.ghost ? ' — not pinned yet' : '') +
+        '"><b>' + (i + 1) + '</b><i>' + esc(p.name) + '</i></span>';
+    }).join('');
+  }
+
+  /* screen-space extras: the line being drawn, and the dots on a selected line */
+  function drawMarks(){
+    var h = '';
+    if (draft && draft.pts.length){
+      var pts = draft.pts.map(function(q){ var p = T.project(q[0], q[1]); return p.x.toFixed(1) + ',' + p.y.toFixed(1); });
+      if (draft.closed && pts.length > 2) h += '<polygon class="draftfill" points="' + pts.join(' ') + '"/>';
+      h += '<polyline class="draft" points="' + pts.join(' ') + (draft.closed && pts.length > 2 ? ' ' + pts[0] : '') + '"/>';
+      h += pts.map(function(p){ var xy = p.split(','); return '<circle class="dot" cx="' + xy[0] + '" cy="' + xy[1] + '" r="3.5"/>'; }).join('');
+    }
+    var it = S.scenery[selItem];
+    if (tool === 'select' && it && it.pts && frameNow()){
+      h += it.pts.map(function(q, k){
+        var p = T.project(q[0], q[1]);
+        return '<circle class="h" data-k="' + k + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="5"/>';
+      }).join('');
+    }
+    marks.innerHTML = h;
+  }
+
+  /* --- pointer handling --------------------------------------------------- */
+  var drag = null;
+  function local(e){ var r = base.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+
+  stage.addEventListener('pointerdown', function(e){
+    if (e.button !== 0 || e.target.closest('.zoom')) return;
+    var pin = e.target.closest('.epin'), h = e.target.closest('circle.h');
+    drag = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: false, target: e.target,
+             kind: pin ? 'pin' : h ? 'vertex' : 'pan', slug: pin && pin.dataset.slug, k: h ? +h.dataset.k : -1, el: pin };
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove', function(e){
+    if (!drag) return;
+    if (!drag.moved){
+      if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 4) return;
+      drag.moved = true;
+      if (drag.kind !== 'pan') snapshot();
+      if (drag.kind === 'pan') stage.classList.add('grabbing');
+    }
+    var at = local(e);
+    if (drag.kind === 'pan'){
+      T.pan(e.clientX - drag.lx, e.clientY - drag.ly);
+    } else if (drag.kind === 'pin'){
+      var p = placeBySlug(drag.slug), ll = T.unproject(at.x, at.y);
+      p.lat = r6(ll.lat); p.lng = r6(ll.lng);
+      drag.el.style.left = at.x + 'px'; drag.el.style.top = at.y + 'px';
+      drag.el.classList.remove('ghost');
+    } else if (drag.kind === 'vertex'){
+      var it = S.scenery[selItem], v = T.unproject(at.x, at.y);
+      it.pts[drag.k] = [r5(v.lat), r5(v.lng)];
+      var d = M.itemPath(it, frameNow());
+      Array.prototype.forEach.call(ov.querySelectorAll('g[data-i="' + selItem + '"] path'), function(el){ el.setAttribute('d', d); });
+      drawMarks();
+    }
+    drag.lx = e.clientX; drag.ly = e.clientY;
+  });
+  stage.addEventListener('pointerup', function(e){
+    if (!drag) return;
+    var d = drag; drag = null;
+    stage.classList.remove('grabbing');
+    if (d.moved){
+      if (d.kind === 'pin'){ selPlace = d.slug; refresh(); say('Moved ' + placeBySlug(d.slug).name + '.'); }
+      else if (d.kind === 'vertex') refresh();
+      return;
+    }
+    click(d, local(e));
+  });
+  stage.addEventListener('pointercancel', function(){ drag = null; stage.classList.remove('grabbing'); });
+
+  function click(d, at){
+    if (d.kind === 'pin'){ choosePlace(d.slug); return; }
+    if (d.kind === 'vertex') return;
+    var ll = T.unproject(at.x, at.y);
+    if (tool === 'pin') dropPin(ll);
+    else if (tool === 'draw') addPoint(ll);
+    else if (tool === 'select'){
+      var g = d.target.closest && d.target.closest('#ov .sc');
+      selItem = g ? +g.dataset.i : -1;
+      drawScenery(); drawMarks(); renderLine(); updateHint();
+    }
+  }
+  stage.addEventListener('dblclick', function(e){ if (tool === 'draw' && draft){ e.preventDefault(); finishDraft(); } });
+  stage.addEventListener('contextmenu', function(e){
+    var h = e.target.closest('circle.h');
+    if (!h) return;
+    e.preventDefault();
+    var it = S.scenery[selItem], min = it.closed ? 3 : 2;
+    if (it.pts.length <= min){ say('That is as few points as a ' + (it.closed ? 'shape' : 'line') + ' can have.'); return; }
+    change(function(){ it.pts.splice(+h.dataset.k, 1); });
+  });
+  stage.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var at = local(e), dz = -e.deltaY * (e.deltaMode ? 0.05 : 0.0025);
+    T.zoomAt(at.x, at.y, Math.max(-1, Math.min(1, dz)));
+  }, { passive: false });
+  $('zin').addEventListener('click', function(){ T.zoomAt(base.clientWidth / 2, base.clientHeight / 2, 1); });
+  $('zout').addEventListener('click', function(){ T.zoomAt(base.clientWidth / 2, base.clientHeight / 2, -1); });
+  if (window.ResizeObserver) new ResizeObserver(function(){ T.render(); }).observe(base);
+
+  /* --- tools -------------------------------------------------------------- */
+  function setTool(t){
+    if (tool === 'draw' && t !== 'draw' && draft) finishDraft(true);
+    tool = t;
+    if (t !== 'draw') draft = null;
+    stage.className = 'stage t-' + t;
+    Array.prototype.forEach.call(document.querySelectorAll('#tools button'), function(b){ b.classList.toggle('is-on', b.dataset.tool === t); });
+    if (t === 'draw' && !draft) draft = { kind: lastKind, closed: !!AREAS[lastKind], pts: [] };
+    if (t !== 'select') selItem = -1;
+    drawScenery(); drawMarks(); renderLine(); updateHint();
+  }
+  $('tools').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setTool(b.dataset.tool); });
+
+  function updateHint(){
+    var fr = frameNow(), p = placeBySlug(selPlace), msg;
+    if (tool === 'pan') msg = 'Drag to move · scroll to zoom · drag a pin to move it';
+    else if (tool === 'pin') msg = p ? 'Click the map to put <b>' + esc(p.name) + '</b> there' : 'Pick a place in the list first';
+    else if (tool === 'draw') msg = 'Click to add points · double-click or Enter to finish · Backspace removes the last point';
+    else msg = selItem >= 0 ? 'Drag the dots to reshape · right-click a dot to remove it · Delete removes the line' : 'Click a line or area to select it';
+    if (!fr) msg = '<b>No frame yet.</b> Frame the area you want drawn, then press “Use this view as the frame”. · ' + msg;
+    $('hint').innerHTML = msg;
+  }
+
+  var toastTimer = null;
+  function say(msg){
+    var t = $('toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2800);
+  }
+
+  /* --- frame -------------------------------------------------------------- */
+  function renderFrame(){
+    var b = S.bounds, el = $('frameNote');
+    if (!b){
+      el.innerHTML = 'No frame yet. Move and zoom the real map until it covers everything you want on the drawing, then set it. ' +
+        'The drawing is exactly this 4:3 box.';
+      $('goFrame').disabled = true;
+      return;
+    }
+    var mid = (b.north + b.south) / 2;
+    var w = (b.east - b.west) * 111.32 * Math.cos(mid * Math.PI / 180), h = (b.north - b.south) * 111.32;
+    el.innerHTML = 'The drawing covers about <b>' + w.toFixed(1) + ' × ' + h.toFixed(1) + ' km</b>. Setting it again re-frames everything — traced lines and pins keep their real positions.';
+    $('goFrame').disabled = false;
+  }
+  $('useView').addEventListener('click', function(){
+    change(function(){
+      var b = T.bounds(), v = T.view();
+      S.bounds = { north: r6(b.north), south: r6(b.south), east: r6(b.east), west: r6(b.west) };
+      S.center = { lat: r6(v.lat), lng: r6(v.lng) };
+      S.zoom = S.zoom || {};
+      S.zoom.start = Math.round(v.zoom);
+    });
+    say('Frame set. Now trace it from OpenStreetMap, or pin the places.');
+  });
+  $('goFrame').addEventListener('click', showFrame);
+  function showFrame(){
+    if (!S.bounds) return;
+    T.fit(S.bounds);
+    T.zoomAt(base.clientWidth / 2, base.clientHeight / 2, -0.15);
+  }
+  $('tileOp').addEventListener('input', function(){ base.style.opacity = this.value / 100; });
+  $('showDraw').addEventListener('change', function(){ ov.classList.toggle('hidden', !this.checked); });
+  $('wobble').addEventListener('change', drawScenery);
+
+  /* --- tracing from OpenStreetMap ----------------------------------------- */
+  function classify(t){
+    if (t.tunnel && t.tunnel !== 'no') return null;
+    if (t.building) return 'building';
+    var h = t.highway;
+    if (h){
+      if (/^(motorway|trunk|primary|secondary|tertiary)(_link)?$/.test(h)) return 'road';
+      if (/^(residential|unclassified|living_street|road)$/.test(h)) return 'lane';
+      if (h === 'service') return /^(driveway|parking_aisle|drive-through)$/.test(t.service || '') ? null : 'lane';
+      if (/^(footway|path|track|bridleway|cycleway|steps|pedestrian)$/.test(h)) return 'track';
+      return null;
+    }
+    if (t.railway) return /^(rail|light_rail|narrow_gauge|preserved|disused|abandoned)$/.test(t.railway) ? 'rail' : null;
+    if (t.waterway) return t.waterway === 'riverbank' ? 'water' : /^(river|stream|canal|drain|ditch|brook)$/.test(t.waterway) ? 'stream' : null;
+    if (t.natural === 'water' || /^(reservoir|basin)$/.test(t.landuse || '')) return 'water';
+    if (/^(wood|scrub|heath)$/.test(t.natural || '') || t.landuse === 'forest') return 'wood';
+    if (/^(park|nature_reserve|common|garden|golf_course|playground|pitch|recreation_ground)$/.test(t.leisure || '') ||
+        /^(grass|meadow|recreation_ground|village_green|allotments|cemetery)$/.test(t.landuse || '') ||
+        /^(grassland|wetland)$/.test(t.natural || '')) return 'green';
+    return null;
+  }
+  function same(a, b){ return a[0] === b[0] && a[1] === b[1]; }
+  /* multipolygon outer ways come in pieces: join them end to end into rings */
+  function stitch(ways){
+    var rings = [], pool = ways.slice();
+    while (pool.length){
+      var r = pool.shift().slice(), grew = true;
+      while (grew && !same(r[0], r[r.length - 1])){
+        grew = false;
+        for (var i = 0; i < pool.length; i++){
+          var w = pool[i], a = r[0], z = r[r.length - 1];
+          if (same(z, w[0])) r = r.concat(w.slice(1));
+          else if (same(z, w[w.length - 1])) r = r.concat(w.slice().reverse().slice(1));
+          else if (same(a, w[w.length - 1])) r = w.concat(r.slice(1));
+          else if (same(a, w[0])) r = w.slice().reverse().concat(r.slice(1));
+          else continue;
+          pool.splice(i, 1); grew = true; break;
+        }
+      }
+      rings.push(r);
+    }
+    return rings;
+  }
+  /* Douglas-Peucker on sketch pixels: keeps the shape, drops the GPS noise */
+  function simplify(pts, tol){
+    if (pts.length < 3) return pts;
+    var keep = new Array(pts.length), stack = [[0, pts.length - 1]];
+    keep[0] = keep[pts.length - 1] = true;
+    while (stack.length){
+      var s = stack.pop(), a = pts[s[0]], b = pts[s[1]], best = 0, at = -1;
+      var dx = b[0] - a[0], dy = b[1] - a[1], len = Math.sqrt(dx * dx + dy * dy) || 1e-9;
+      for (var i = s[0] + 1; i < s[1]; i++){
+        var d = Math.abs(dy * pts[i][0] - dx * pts[i][1] + b[0] * a[1] - b[1] * a[0]) / len;
+        if (s[1] - s[0] > 1 && a[0] === b[0] && a[1] === b[1]) d = Math.hypot(pts[i][0] - a[0], pts[i][1] - a[1]);
+        if (d > best){ best = d; at = i; }
+      }
+      if (best > tol){ keep[at] = true; stack.push([s[0], at], [at, s[1]]); }
+    }
+    return pts.filter(function(_, i){ return keep[i]; });
+  }
+  function lengthOf(p){ var L = 0; for (var i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
+  function areaOf(p){ var A = 0; for (var i = 0, j = p.length - 1; i < p.length; j = i++) A += (p[j][0] + p[i][0]) * (p[j][1] - p[i][1]); return Math.abs(A / 2); }
+
+  function toItems(json, fr){
+    var out = [], PAD = 30;
+    function inside(p){ return p[0] > -PAD && p[0] < SK.w + PAD && p[1] > -PAD && p[1] < SK.h + PAD; }
+    (json.elements || []).forEach(function(el){
+      var kind = classify(el.tags || {});
+      if (!kind) return;
+      var rings = [];
+      if (el.type === 'way' && el.geometry) rings = [el.geometry.map(function(g){ return [g.lat, g.lon]; })];
+      else if (el.type === 'relation' && el.members){
+        rings = stitch(el.members.filter(function(m){ return m.type === 'way' && m.role !== 'inner' && m.geometry; })
+          .map(function(m){ return m.geometry.filter(Boolean).map(function(g){ return [g.lat, g.lon]; }); }));
+      }
+      rings.forEach(function(ring){
+        if (ring.length < 2) return;
+        var closed = !!AREAS[kind] && same(ring[0], ring[ring.length - 1]);
+        if (AREAS[kind] && !closed) return;
+        var px = ring.map(function(q){ var s = fr.toSketch(q[0], q[1]); return [s.x, s.y, q[0], q[1]]; });
+        var runs = [];
+        if (closed){
+          var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+          px.forEach(function(p){ x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
+          if (x1 > 0 && x0 < SK.w && y1 > 0 && y0 < SK.h) runs = [px];
+        } else {
+          /* cut lines where they leave the frame, keeping one point beyond the edge */
+          var cur = null;
+          px.forEach(function(p, i){
+            var keep = inside(p) || (i > 0 && inside(px[i - 1])) || (i < px.length - 1 && inside(px[i + 1]));
+            if (keep){ if (!cur){ cur = []; runs.push(cur); } cur.push(p); } else cur = null;
+          });
+        }
+        runs.forEach(function(r){
+          r = simplify(r, 1.1);
+          if (closed){
+            if (same(r[0], r[r.length - 1])) r = r.slice(0, -1);
+            if (r.length < 3 || areaOf(r) < 25) return;
+          } else if (r.length < 2 || lengthOf(r) < 8) return;
+          var it = { kind: kind };
+          if (PENCIL[kind]) it.pencil = true;
+          if (closed) it.closed = true;
+          it.osm = true;
+          it.pts = r.map(function(p){ return [r5(p[2]), r5(p[3])]; });
+          out.push(it);
+        });
+      });
+    });
+    return out;
+  }
+
+  var OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  async function fetchOsm(){
+    var b = S.bounds;
+    if (!b){ say('Set the frame first — trace works on whatever is inside it.'); return; }
+    var btn = $('fetchOsm');
+    btn.disabled = true; btn.textContent = 'Fetching…';
+    var mx = (b.east - b.west) * 0.05, my = (b.north - b.south) * 0.05;
+    var bb = [b.south - my, b.west - mx, b.north + my, b.east + mx].map(function(v){ return v.toFixed(6); }).join(',');
+    var q = '[out:json][timeout:60];(' +
+      'way["highway"](' + bb + ');way["railway"](' + bb + ');way["waterway"](' + bb + ');' +
+      'way["natural"~"^(water|wood|scrub|heath|grassland|wetland)$"](' + bb + ');relation["natural"~"^(water|wood|scrub|heath)$"](' + bb + ');' +
+      'way["landuse"~"^(reservoir|basin|forest|grass|meadow|recreation_ground|village_green|allotments|cemetery)$"](' + bb + ');' +
+      'relation["landuse"~"^(reservoir|basin|forest|grass|meadow|recreation_ground)$"](' + bb + ');' +
+      'way["leisure"~"^(park|nature_reserve|common|garden|golf_course|playground|pitch|recreation_ground)$"](' + bb + ');' +
+      'relation["leisure"~"^(park|nature_reserve|common|golf_course)$"](' + bb + ');' +
+      'way["building"](' + bb + ');' +
+      ');out geom;';
+    var json = null, err = null;
+    for (var i = 0; i < OVERPASS.length && !json; i++){
+      try {
+        var r = await fetch(OVERPASS[i], { method: 'POST', body: 'data=' + encodeURIComponent(q),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+        if (!r.ok) throw new Error('OpenStreetMap said ' + r.status);
+        json = await r.json();
+      } catch(e){ err = e; }
+    }
+    btn.disabled = false; btn.textContent = 'Fetch again';
+    if (!json){ say('Could not reach OpenStreetMap' + (err ? ' — ' + err.message : '') + '. Try again in a minute.'); return; }
+    var items = toItems(json, frameNow()), counts = {};
+    items.forEach(function(it){ counts[it.kind] = (counts[it.kind] || 0) + 1; });
+    osm = { items: items, counts: counts, keep: osm ? osm.keep : { road: 1, lane: 1, track: 1, rail: 1, stream: 1, water: 1, green: 1, wood: 1 } };
+    renderOsm();
+    say('Found ' + items.length + ' lines and areas. Choose what to keep.');
+  }
+  $('fetchOsm').addEventListener('click', fetchOsm);
+
+  function renderOsm(){
+    var el = $('osmOut');
+    if (!osm){ el.innerHTML = ''; }
+    else {
+      var kinds = KINDS.filter(function(k){ return osm.counts[k[0]]; });
+      el.innerHTML = kinds.length ? '<div class="kinds">' + kinds.map(function(k){
+        return '<label class="chk"><input type="checkbox" data-kind="' + k[0] + '"' + (osm.keep[k[0]] ? ' checked' : '') + '> ' +
+          k[1] + ' <small>' + osm.counts[k[0]] + '</small></label>';
+      }).join('') + '</div><div class="row"><button class="btn primary" type="button" id="useOsm">Put these on the drawing</button></div>' +
+        '<p class="note">Replaces anything traced before. Lines you drew yourself are kept.</p>'
+        : '<p class="note">Nothing found inside the frame.</p>';
+    }
+    var old = S.scenery.filter(function(it){ return !it.pts; }).length;
+    $('legacyOut').innerHTML = old ? '<p class="note">' + old + ' lines are from the old hand-drawn sketch and do not follow the real map.</p>' +
+      '<div class="row"><button class="btn danger" type="button" id="dropLegacy">Remove the old sketch</button></div>' : '';
+  }
+  $('osmOut').addEventListener('change', function(e){ var k = e.target.dataset.kind; if (k) osm.keep[k] = e.target.checked ? 1 : 0; });
+  $('osmOut').addEventListener('click', function(e){
+    if (e.target.id !== 'useOsm') return;
+    var add = osm.items.filter(function(it){ return osm.keep[it.kind]; });
+    change(function(){ S.scenery = S.scenery.filter(function(it){ return !it.osm; }).concat(clone(add)); });
+    say('Traced ' + add.length + ' lines and areas.');
+  });
+  $('legacyOut').addEventListener('click', function(e){
+    if (e.target.id === 'dropLegacy') change(function(){ S.scenery = S.scenery.filter(function(it){ return it.pts; }); });
+  });
+
+  /* --- drawing your own lines, and editing any line ----------------------- */
+  var lastKind = 'track';
+  function addPoint(ll){
+    if (!frameNow()){ say('Set the frame first.'); return; }
+    if (!draft) draft = { kind: lastKind, closed: !!AREAS[lastKind], pts: [] };
+    draft.pts.push([r5(ll.lat), r5(ll.lng)]);
+    drawMarks(); renderLine();
+  }
+  function finishDraft(quiet){
+    var d = draft;
+    draft = tool === 'draw' ? { kind: lastKind, closed: !!AREAS[lastKind], pts: [] } : null;
+    if (!d) return;
+    /* a double-click lands two clicks on the same spot first */
+    var pts = d.pts.filter(function(q, i){
+      if (!i) return true;
+      var a = T.project(q[0], q[1]), b = T.project(d.pts[i - 1][0], d.pts[i - 1][1]);
+      return Math.hypot(a.x - b.x, a.y - b.y) > 4;
+    });
+    if (pts.length < (d.closed ? 3 : 2)){ if (!quiet && d.pts.length) say('Too few points — keep clicking.'); drawMarks(); renderLine(); return; }
+    change(function(){
+      var it = { kind: d.kind };
+      if (PENCIL[d.kind]) it.pencil = true;
+      if (d.closed) it.closed = true;
+      it.pts = pts;
+      S.scenery.push(it);
+    });
+    say('Added a ' + kindName(d.kind).toLowerCase() + '.');
+  }
+  function kindOptions(cur){
+    return KINDS.map(function(k){ return '<option value="' + k[0] + '"' + (k[0] === cur ? ' selected' : '') + '>' + k[1] + '</option>'; }).join('');
+  }
+  function renderLine(){
+    var sec = $('lineSec'), out = $('lineOut'), it = S.scenery[selItem];
+    if (tool === 'draw' && draft){
+      sec.hidden = false; $('lineTitle').textContent = 'New line';
+      out.innerHTML = '<label class="field"><span>Kind</span><select id="dKind">' + kindOptions(draft.kind) + '</select></label>' +
+        '<label class="chk"><input type="checkbox" id="dClosed"' + (draft.closed ? ' checked' : '') + '> An area, not a line</label>' +
+        '<p class="note" style="margin-top:10px">' + draft.pts.length + ' points so far.</p>' +
+        '<div class="row"><button class="btn primary" type="button" id="dDone"' + (draft.pts.length < 2 ? ' disabled' : '') + '>Finish</button>' +
+        '<button class="btn" type="button" id="dCancel">Cancel</button></div>';
+    } else if (it){
+      sec.hidden = false; $('lineTitle').textContent = 'Selected';
+      out.innerHTML = '<label class="field"><span>Kind</span><select id="sKind">' + kindOptions(it.kind) + '</select></label>' +
+        '<div class="row"><label class="chk"><input type="checkbox" id="sPencil"' + (it.pencil ? ' checked' : '') + '> Sketchy double line</label>' +
+        (it.pts ? '<label class="chk"><input type="checkbox" id="sClosed"' + (it.closed ? ' checked' : '') + '> Area</label>' : '') + '</div>' +
+        '<p class="note">' + (it.pts ? it.pts.length + ' points, ' + (it.osm ? 'traced from OpenStreetMap' : 'drawn by hand') : 'From the old sketch — it cannot be reshaped here.') + '</p>' +
+        '<div class="row"><button class="btn danger" type="button" id="sDel">Delete</button></div>';
+    } else sec.hidden = true;
+  }
+  $('lineOut').addEventListener('change', function(e){
+    var id = e.target.id, it = S.scenery[selItem];
+    if (id === 'dKind'){ lastKind = draft.kind = e.target.value; draft.closed = !!AREAS[draft.kind]; renderLine(); drawMarks(); }
+    else if (id === 'dClosed'){ draft.closed = e.target.checked; drawMarks(); }
+    else if (id === 'sKind') change(function(){ it.kind = e.target.value; });
+    else if (id === 'sPencil') change(function(){ if (e.target.checked) it.pencil = true; else delete it.pencil; });
+    else if (id === 'sClosed') change(function(){ if (e.target.checked) it.closed = true; else delete it.closed; });
+  });
+  $('lineOut').addEventListener('click', function(e){
+    var id = e.target.id;
+    if (id === 'dDone') finishDraft();
+    else if (id === 'dCancel'){ draft.pts = []; drawMarks(); renderLine(); }
+    else if (id === 'sDel') deleteItem();
+  });
+  function deleteItem(){
+    if (selItem < 0) return;
+    var i = selItem;
+    selItem = -1;
+    change(function(){ S.scenery.splice(i, 1); });
+    say('Deleted. Undo brings it back.');
+  }
+
+  /* --- places ------------------------------------------------------------- */
+  function placeBySlug(slug){ for (var i = 0; i < S.places.length; i++) if (S.places[i].slug === slug) return S.places[i]; return null; }
+  function choosePlace(slug){
+    selPlace = slug;
+    renderList(); renderForm(); drawPins(); updateHint();
+  }
+  function dropPin(ll){
+    var p = placeBySlug(selPlace);
+    if (!p){ say('Pick a place in the list first.'); return; }
+    change(function(){ p.lat = r6(ll.lat); p.lng = r6(ll.lng); });
+    var next = S.places.filter(function(x){ return !isNum(x.lat); })[0];
+    if (next){ choosePlace(next.slug); say('Pinned ' + p.name + '. Next: ' + next.name + '.'); }
+    else say('Pinned ' + p.name + '.' + (S.bounds ? '' : ' Set a frame so the drawing can use it.'));
+  }
+
+  function renderList(){
+    $('plist').innerHTML = S.places.map(function(p, i){
+      var on = isNum(p.lat) && isNum(p.lng);
+      return '<li class="' + (on ? '' : 'off') + (p.slug === selPlace ? ' is-sel' : '') + '">' +
+        '<button type="button" class="pl" data-slug="' + esc(p.slug) + '"><span class="num">' + (i + 1) + '</span>' + esc(p.name) +
+        '<span class="st">' + (on ? 'pinned' : 'not pinned') + '</span></button>' +
+        '<button type="button" class="mv" data-up="' + i + '" aria-label="Move up"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" class="mv" data-down="' + i + '" aria-label="Move down"' + (i < S.places.length - 1 ? '' : ' disabled') + '>↓</button></li>';
+    }).join('');
+  }
+  $('plist').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.slug) choosePlace(b.dataset.slug);
+    else if (b.dataset.up || b.dataset.down){
+      var i = +(b.dataset.up || b.dataset.down), j = b.dataset.up ? i - 1 : i + 1;
+      change(function(){ var t = S.places[i]; S.places[i] = S.places[j]; S.places[j] = t; });
+    }
+  });
+  $('addPlace').addEventListener('click', function(){
+    var slug = 'new-place', n = 2;
+    while (placeBySlug(slug)) slug = 'new-place-' + n++;
+    change(function(){ S.places.push({ slug: slug, name: 'New place', type: 'Landmark', desc: '' }); });
+    choosePlace(slug);
+    var f = document.querySelector('#pform [data-f="name"]'); if (f){ f.focus(); f.select(); }
+  });
+
+  function slugify(s){ return String(s).toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'place'; }
+
+  function renderForm(){
+    var p = placeBySlug(selPlace), el = $('pform');
+    if (!p){ el.innerHTML = ''; return; }
+    var on = isNum(p.lat) && isNum(p.lng), shots = M.photosOf(p), locked = shots.length > 0;
+    el.innerHTML = '<div class="pform"><h3>' + esc(p.name) + '</h3>' +
+      '<label class="field"><span>Name</span><input data-f="name" value="' + esc(p.name) + '"></label>' +
+      '<label class="field"><span>Type</span><input data-f="type" value="' + esc(p.type || '') + '" placeholder="Landmark, Path, Bridge…"></label>' +
+      '<label class="field"><span>Description</span><textarea data-f="desc" rows="3">' + esc(p.desc || '') + '</textarea></label>' +
+      '<label class="field"><span>Slug — used in links and photo names</span><input data-f="slug" value="' + esc(p.slug) + '"' + (locked ? ' disabled title="Fixed once it has photos"' : '') + '></label>' +
+      '<label class="chk"><input type="checkbox" data-f="above"' + (p.map && p.map.above ? ' checked' : '') + '> Label above the pin</label>' +
+      '<p class="note" style="margin:12px 0 6px">' + (on ? 'Pinned at ' + p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) + '.' : 'Not pinned yet.') + '</p>' +
+      '<div class="row">' + (on ? '<button class="btn" type="button" data-a="unpin">Unpin</button>' : '<button class="btn" type="button" data-a="pin">Pin it</button>') +
+      (on ? '<button class="btn" type="button" data-a="find">Find on map</button>' : '') + '</div>' +
+      '<h3 style="margin-top:18px">Photos</h3>' +
+      (shots.length ? '<div class="photos">' + shots.map(function(s, k){
+        return '<div class="ph"><img src="' + esc(photoSrc(s.src)) + '" alt="" onerror="this.style.opacity=.2">' +
+          (k === 0 ? '<span class="tag">Cover</span>' : '') + (pending[s.src] && !pending[s.src].done ? '<span class="tag" style="left:auto;right:5px">New</span>' : '') +
+          '<div class="bar">' + (k ? '<button type="button" data-cover="' + k + '">Make cover</button>' : '<span></span>') +
+          '<button type="button" data-rm="' + k + '">Remove</button></div>' +
+          '<input data-cap="' + k + '" value="' + esc(s.caption || '') + '" placeholder="Caption (optional)"></div>';
+      }).join('') + '</div>' : '') +
+      '<label class="drop" id="drop">Drop photos here, or <u>choose files</u><input type="file" accept="image/*" multiple hidden id="files"></label>' +
+      '<p class="note" style="margin-top:8px">They are resized to about 300 KB and uploaded when you publish.</p>' +
+      '<div class="row" style="margin-top:14px"><button class="btn danger" type="button" data-a="delete">Delete place</button></div></div>';
+  }
+
+  var pform = $('pform');
+  pform.addEventListener('focusin', function(e){ if (/^(name|type|desc)$/.test(e.target.dataset.f || '') || e.target.dataset.cap) snapshot(); });
+  pform.addEventListener('input', function(e){
+    var p = placeBySlug(selPlace), f = e.target.dataset.f, cap = e.target.dataset.cap;
+    if (!p) return;
+    if (f === 'name' || f === 'type' || f === 'desc') p[f] = e.target.value;
+    else if (cap !== undefined){
+      var ph = p.photos[+cap], o = typeof ph === 'string' ? { src: ph } : Object.assign({}, ph);
+      if (e.target.value) o.caption = e.target.value; else delete o.caption;
+      p.photos[+cap] = Object.keys(o).length === 1 ? o.src : o;
+    } else return;
+    saveDraft(); renderList(); drawPins();
+    if (f === 'name') pform.querySelector('h3').textContent = p.name;
+  });
+  pform.addEventListener('change', function(e){
+    var p = placeBySlug(selPlace), f = e.target.dataset.f;
+    if (!p) return;
+    if (f === 'slug'){
+      var s = slugify(e.target.value);
+      if (s !== p.slug && placeBySlug(s)){ say('Another place already uses “' + s + '”.'); e.target.value = p.slug; return; }
+      change(function(){ p.slug = s; }); selPlace = s; renderForm();
+    } else if (f === 'above'){
+      change(function(){
+        p.map = p.map || {};
+        if (e.target.checked) p.map.above = true; else delete p.map.above;
+        if (!isNum(p.map.x) && !p.map.above) delete p.map;
+      }, true);
+    } else if (e.target.id === 'files'){ addPhotos(e.target.files); e.target.value = ''; }
+  });
+  pform.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    var p = placeBySlug(selPlace); if (!p) return;
+    var a = b.dataset.a;
+    if (a === 'pin'){ setTool('pin'); say('Click the map to pin ' + p.name + '.'); }
+    else if (a === 'unpin') change(function(){ delete p.lat; delete p.lng; });
+    else if (a === 'find'){ var q = T.project(p.lat, p.lng); T.pan(base.clientWidth / 2 - q.x, base.clientHeight / 2 - q.y); }
+    else if (a === 'delete'){
+      if (!armed('del-' + p.slug, b, 'Click again to delete')) return;
+      change(function(){
+        M.photosOf(p).forEach(function(ph){ if (!pending[ph.src]) removed.push(ph.src); });
+        S.places.splice(S.places.indexOf(p), 1);
+      });
+      selPlace = S.places.length ? S.places[0].slug : null;
+      refresh(); say('Deleted ' + p.name + '. Undo brings it back.');
+    } else if (b.dataset.cover){
+      var k = +b.dataset.cover;
+      change(function(){ p.photos.unshift(p.photos.splice(k, 1)[0]); });
+    } else if (b.dataset.rm){
+      var r = +b.dataset.rm;
+      change(function(){
+        var ph = p.photos.splice(r, 1)[0], src = typeof ph === 'string' ? ph : ph.src;
+        if (!pending[src] || pending[src].done) removed.push(src);
+        if (!p.photos.length) delete p.photos;
+      });
+    }
+  });
+  pform.addEventListener('dragover', function(e){ var d = e.target.closest('#drop'); if (d){ e.preventDefault(); d.classList.add('over'); } });
+  pform.addEventListener('dragleave', function(e){ var d = e.target.closest('#drop'); if (d) d.classList.remove('over'); });
+  pform.addEventListener('drop', function(e){
+    var d = e.target.closest('#drop'); if (!d) return;
+    e.preventDefault(); d.classList.remove('over');
+    addPhotos(e.dataTransfer.files);
+  });
+
+  /* --- photos: resize in the browser, keep until publish ------------------- */
+  function loadImage(file){
+    return new Promise(function(res, rej){
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function(){ res(im); };
+      im.onerror = function(){
+        URL.revokeObjectURL(url);
+        rej(new Error(/\.hei[cf]$/i.test(file.name) ? file.name + ' is HEIC, which this browser cannot read — export it as JPEG first.' : 'Could not read ' + file.name + '.'));
+      };
+      im.src = url;
+    });
+  }
+  function toBlob(canvas, q){ return new Promise(function(res){ canvas.toBlob(res, 'image/jpeg', q); }); }
+  async function shrink(file){
+    var im = await loadImage(file), out = null;
+    var sizes = [2000, 1600, 1280, 1024], quals = [0.85, 0.77, 0.68];
+    for (var i = 0; i < sizes.length; i++){
+      var k = Math.min(1, sizes[i] / Math.max(im.naturalWidth, im.naturalHeight));
+      var c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      var g = c.getContext('2d');
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(im, 0, 0, c.width, c.height);
+      for (var j = 0; j < quals.length; j++){
+        out = await toBlob(c, quals[j]);
+        if (out && out.size <= 320 * 1024) return out;
+      }
+    }
+    return out;
+  }
+  function nextPhotoPath(slug){
+    var used = referenced(), n = 1, path;
+    Object.keys(pending).forEach(function(k){ used[k] = 1; });
+    removed.forEach(function(k){ used[k] = 1; });
+    do { path = 'images/' + slug + '-' + (n < 10 ? '0' : '') + n + '.jpg'; n++; } while (used[path]);
+    return path;
+  }
+  async function addPhotos(list){
+    var files = Array.prototype.slice.call(list || []).filter(function(f){ return /^image\//.test(f.type) || /\.hei[cf]$/i.test(f.name); });
+    var slug = selPlace;
+    if (!files.length || !placeBySlug(slug)) return;
+    for (var i = 0; i < files.length; i++){
+      say('Resizing ' + files[i].name + '…');
+      var blob;
+      try { blob = await shrink(files[i]); } catch(e){ say(e.message); continue; }
+      var p = placeBySlug(slug);
+      if (!p || !blob) continue;
+      var path = nextPhotoPath(slug);
+      pending[path] = { blob: blob, url: URL.createObjectURL(blob) };
+      idbPut(path, blob);
+      change(function(){ (p.photos = p.photos || []).push(path); }, slug !== selPlace);
+    }
+    say('Added ' + files.length + ' photo' + (files.length === 1 ? '' : 's') + ' — ' + 'publish to upload.');
+  }
+
+  /* --- places.js, written out --------------------------------------------- */
+  var HEADER = [
+    '/* ---------------------------------------------------------------------------',
+    ' * Cofton — content + map',
+    ' *',
+    ' * Written by edit.html. You can edit it by hand too, but the editor rewrites',
+    ' * the whole file when it publishes, so comments added here are not kept —',
+    ' * put notes in the README instead.',
+    ' *',
+    ' *   center, zoom  where the editor\'s real map opens',
+    ' *   tiles         the real map: a tile url with {z} {x} {y}, and its credit',
+    ' *   bounds        the drawing\'s frame, { north, south, east, west }. The',
+    ' *                 800 x 600 sketch is exactly this area, so pins and traced',
+    ' *                 lines sit where they really are.',
+    ' *   places[]      the field guide entries, in page order',
+    ' *   scenery[]     the hand-drawn layer under the pins',
+    ' *',
+    ' * A place:',
+    ' *   slug          used for links, pins and photo names',
+    ' *   name, type, desc',
+    ' *   tone          optional card colour wash, 1-6 (cycles if left out)',
+    ' *   photos        optional, first is the cover: \'images/x.jpg\', or',
+    ' *                 { src, caption } to add a caption',
+    ' *   lat, lng      the real position',
+    ' *   map           { x, y } fallback spot on the sketch; above: true lifts the label',
+    ' *',
+    ' * A scenery item:',
+    ' *   kind          road, lane, track, rail, stream, water, green, wood,',
+    ' *                 building, contour or bridge (styles live in map.css)',
+    ' *   pts           [[lat, lng], ...] on the real map, or',
+    ' *   d             an SVG path drawn straight onto the 800 x 600 sketch',
+    ' *   closed        an area rather than a line',
+    ' *   pencil        drawn twice, slightly apart, to look hand-drawn',
+    ' *   osm           traced from OpenStreetMap; tracing again replaces these',
+    ' * ------------------------------------------------------------------------- */'
+  ].join('\n');
+
+  function quote(s){
+    s = String(s);
+    if (/[\n\r\\\u2028\u2029]/.test(s) || (s.indexOf("'") >= 0 && s.indexOf('"') < 0)) return JSON.stringify(s);
+    return "'" + s.replace(/'/g, "\\'") + "'";
+  }
+  function num(v){ return isNum(v) ? String(r6(v)) : 'null'; }
+  function key(k){ return /^[A-Za-z_$][\w$]*$/.test(k) ? k : quote(k); }
+  function lit(v){
+    if (typeof v === 'string') return quote(v);
+    if (typeof v === 'number') return num(v);
+    if (v === null || typeof v !== 'object') return String(v);
+    if (Array.isArray(v)) return '[' + v.map(lit).join(', ') + ']';
+    return '{ ' + Object.keys(v).map(function(k){ return key(k) + ': ' + lit(v[k]); }).join(', ') + ' }';
+  }
+  /* known keys first, in a stable order, then anything else that was there */
+  function fields(o, order, fmt){
+    var keys = order.filter(function(k){ return o[k] !== undefined; })
+      .concat(Object.keys(o).filter(function(k){ return order.indexOf(k) < 0 && k.charAt(0) !== '_'; }));
+    return keys.map(function(k){ return key(k) + ': ' + ((fmt && fmt[k]) ? fmt[k](o[k]) : lit(o[k])); });
+  }
+  function placeOut(p){
+    return '    {\n      ' + fields(p, ['slug', 'name', 'type', 'desc', 'tone', 'photos', 'lat', 'lng', 'map'], {
+      photos: function(list){ return '[\n' + list.map(function(x){ return '        ' + lit(x); }).join(',\n') + '\n      ]'; }
+    }).join(',\n      ') + '\n    }';
+  }
+  function itemOut(it){
+    return '    { ' + fields(it, ['kind', 'pencil', 'closed', 'osm', 'd', 'pts'], {
+      pts: function(pts){ return '[' + pts.map(function(q){ return '[' + r5(q[0]) + ',' + r5(q[1]) + ']'; }).join(',') + ']'; }
+    }).join(', ') + ' }';
+  }
+  function buildExport(){
+    var top = [];
+    if (S.center) top.push('  center: ' + lit({ lat: S.center.lat, lng: S.center.lng }) + ',');
+    if (S.zoom) top.push('  zoom: ' + lit(S.zoom) + ',');
+    top.push('  tiles: ' + lit(S.tiles) + ',');
+    if (S.bounds) top.push('  bounds: ' + lit({ north: S.bounds.north, south: S.bounds.south, east: S.bounds.east, west: S.bounds.west }) + ',');
+    Object.keys(S).forEach(function(k){
+      if (['center', 'zoom', 'tiles', 'bounds', 'places', 'scenery', 'fit'].indexOf(k) < 0 && k.charAt(0) !== '_') top.push('  ' + key(k) + ': ' + lit(S[k]) + ',');
+    });
+    return HEADER + '\n\nwindow.COFTON = {\n\n' + top.join('\n\n') + '\n\n' +
+      '  places: [\n' + S.places.map(placeOut).join(',\n') + '\n  ],\n\n' +
+      '  scenery: [\n' + S.scenery.map(itemOut).join(',\n') + '\n  ]\n};\n';
+  }
+
+  /* --- publishing --------------------------------------------------------- */
+  function status(html, cls){ var el = $('pubStatus'); el.innerHTML = html; el.className = 'status' + (cls ? ' ' + cls : ''); }
+  function renderPublish(){
+    var text = buildExport(), bits = [], up = toUpload().length, gone = removed.filter(function(p){ return !referenced()[p]; }).length;
+    if (baseline === null || text !== baseline) bits.push('places.js has changes');
+    if (up) bits.push(up + ' photo' + (up === 1 ? '' : 's') + ' to upload');
+    if (gone) bits.push(gone + ' photo' + (gone === 1 ? '' : 's') + ' to delete');
+    $('pubState').innerHTML = bits.length ? '<span class="dot"></span>' + bits.join(' · ') + '. Your work is saved as a draft in this browser until you publish.'
+      : 'Nothing to publish — this matches places.js.';
+    $('pubState').dataset.dirty = bits.length ? '1' : '';
+  }
+
+  function b64utf8(s){ var bin = atob(s.replace(/\s/g, '')), bytes = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
+  function blobB64(blob){ return new Promise(function(res, rej){ var r = new FileReader(); r.onload = function(){ res(String(r.result).split(',')[1]); }; r.onerror = function(){ rej(r.error); }; r.readAsDataURL(blob); }); }
+
+  async function gh(path, opts){
+    opts = opts || {};
+    var headers = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    if (GH.token) headers.Authorization = 'Bearer ' + GH.token;
+    if (opts.body) headers['Content-Type'] = 'application/json';
+    var r = await fetch('https://api.github.com/repos/' + GH.repo + path, {
+      method: opts.method || 'GET', headers: headers, cache: 'no-store',
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    var j = null;
+    try { j = await r.json(); } catch(e){}
+    if (!r.ok){
+      var err = new Error(r.status === 401 ? 'GitHub did not accept the token.' :
+        r.status === 403 || r.status === 404 ? 'GitHub said no (' + r.status + ') — check the repository name and that the token has Contents: Read and write on it.' :
+        (j && j.message) || 'GitHub said ' + r.status);
+      err.status = r.status;
+      throw err;
+    }
+    return j;
+  }
+  function enc(s){ return s.split('/').map(encodeURIComponent).join('/'); }
+  async function remotePlaces(){
+    var f = await gh('/contents/places.js?ref=' + encodeURIComponent(GH.branch));
+    return b64utf8(f.content);
+  }
+
+  function renderGh(){
+    $('ghRepo').value = GH.repo; $('ghBranch').value = GH.branch; $('ghToken').value = GH.token;
+    $('ghbox').open = !GH.token;
+  }
+  $('ghSave').addEventListener('click', async function(){
+    GH.repo = $('ghRepo').value.trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, '');
+    GH.branch = $('ghBranch').value.trim() || 'main';
+    GH.token = $('ghToken').value.trim();
+    write('cofton-gh', GH);
+    status('Checking…');
+    try {
+      await gh('/git/ref/heads/' + enc(GH.branch));
+      var repo = await gh('');
+      if (repo.permissions && !repo.permissions.push){ status('Connected, but this token cannot write to ' + esc(GH.repo) + '.', 'warn'); return; }
+      status('Connected to ' + esc(GH.repo) + ' (' + esc(GH.branch) + '). Ready to publish.', 'ok');
+      $('ghbox').open = false;
+    } catch(e){ status(esc(e.message), 'warn'); }
+  });
+  $('ghForget').addEventListener('click', function(){ GH.token = ''; write('cofton-gh', GH); renderGh(); status('Token forgotten.'); });
+
+  var publishing = false;
+  $('publish').addEventListener('click', async function(){
+    if (publishing) return;
+    if (!GH.token){ $('ghbox').open = true; status('Add a GitHub token first — it only needs doing once.', 'warn'); $('ghToken').focus(); return; }
+    if (!$('pubState').dataset.dirty){ status('Nothing to publish.'); return; }
+    var btn = this, text = buildExport();
+    publishing = true; btn.disabled = true;
+    try {
+      status('Checking GitHub…');
+      var remote = null;
+      try { remote = await remotePlaces(); } catch(e){ if (e.status !== 404) throw e; }
+      if (remote !== null && baseline !== null && remote !== baseline && remote !== text && armedKey !== 'overwrite'){
+        armedKey = 'overwrite';
+        status('places.js on GitHub has changed since you started — from another browser, or someone else. ' +
+          'Press Publish again to overwrite it with yours, or use Load latest from GitHub to start from theirs.', 'warn');
+        return;
+      }
+      armedKey = null;
+      var ref = await gh('/git/ref/heads/' + enc(GH.branch)), head = ref.object.sha;
+      var commit = await gh('/git/commits/' + head);
+      var tree = [{ path: 'places.js', mode: '100644', type: 'blob', content: text }];
+      var up = toUpload();
+      for (var i = 0; i < up.length; i++){
+        status('Uploading photo ' + (i + 1) + ' of ' + up.length + '…');
+        var blob = await gh('/git/blobs', { method: 'POST', body: { content: await blobB64(pending[up[i]].blob), encoding: 'base64' } });
+        tree.push({ path: up[i], mode: '100644', type: 'blob', sha: blob.sha });
+      }
+      var refs = referenced(), gone = removed.filter(function(p){ return !refs[p]; });
+      if (gone.length){
+        /* only delete files that are really there, or GitHub rejects the tree */
+        var have = {}, full = await gh('/git/trees/' + commit.tree.sha + '?recursive=1');
+        (full.tree || []).forEach(function(t){ have[t.path] = 1; });
+        gone.filter(function(p){ return have[p]; }).forEach(function(p){ tree.push({ path: p, mode: '100644', type: 'blob', sha: null }); });
+      }
+      status('Committing…');
+      var nt = await gh('/git/trees', { method: 'POST', body: { base_tree: commit.tree.sha, tree: tree } });
+      var message = $('msg').value.trim() || ('Update places' + (up.length ? ' and ' + up.length + ' photo' + (up.length === 1 ? '' : 's') : '') + ' from the editor');
+      var nc = await gh('/git/commits', { method: 'POST', body: { message: message, tree: nt.sha, parents: [head] } });
+      await gh('/git/refs/heads/' + enc(GH.branch), { method: 'PATCH', body: { sha: nc.sha } });
+
+      baseline = text; removed = [];
+      up.forEach(function(p){ pending[p].done = true; });
+      forget('cofton-draft'); forget('cofton-pins'); idbClear().catch(function(){});
+      $('msg').value = ''; $('banner').hidden = true;
+      renderPublish(); renderForm();
+      status('Published — <a href="' + esc(nc.html_url || ('https://github.com/' + GH.repo + '/commit/' + nc.sha)) + '" target="_blank" rel="noopener">' +
+        nc.sha.slice(0, 7) + '</a>. The site picks it up once the sync has run.', 'ok');
+    } catch(e){
+      status('Publish failed: ' + esc(e.message) + ' Nothing was changed on GitHub unless it says otherwise above; your draft is still here.', 'warn');
+    } finally { publishing = false; btn.disabled = false; }
+  });
+
+  $('download').addEventListener('click', function(){
+    var blob = new Blob([buildExport()], { type: 'text/javascript;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = 'places.js'; document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+    var up = toUpload().length;
+    status('Downloaded places.js.' + (up ? ' The ' + up + ' new photo' + (up === 1 ? ' is' : 's are') + ' not in it — publish to upload those.' : ''), up ? 'warn' : '');
+  });
+
+  $('loadRemote').addEventListener('click', async function(){
+    var dirty = !!$('pubState').dataset.dirty;
+    if (dirty && !armed('load', this, 'Replace my changes?')) return;
+    try {
+      status('Loading from GitHub…');
+      var text = await remotePlaces(), w = {};
+      new Function('window', text)(w);
+      if (!w.COFTON || !w.COFTON.places) throw new Error('that places.js has no places in it.');
+      snapshot();
+      S = clone(w.COFTON); if (!S.scenery) S.scenery = []; if (!S.tiles) S.tiles = { url: OSM_TILES };
+      baseline = text; removed = []; selItem = -1; draft = null;
+      if (!placeBySlug(selPlace)) selPlace = S.places.length ? S.places[0].slug : null;
+      refresh(); showFrame();
+      status('Loaded the latest places.js from ' + esc(GH.repo) + '.', 'ok');
+    } catch(e){ status('Could not load it: ' + esc(e.message), 'warn'); }
+  });
+
+  /* --- keyboard ------------------------------------------------------------ */
+  document.addEventListener('keydown', function(e){
+    var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !typing){ e.preventDefault(); undo(); return; }
+    if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+    var TOOLS = { '1': 'pan', '2': 'pin', '3': 'draw', '4': 'select' };
+    if (TOOLS[e.key]) setTool(TOOLS[e.key]);
+    else if (e.key === 'Escape'){
+      if (draft && draft.pts.length){ draft.pts = []; drawMarks(); renderLine(); }
+      else if (selItem >= 0){ selItem = -1; drawScenery(); drawMarks(); renderLine(); updateHint(); }
+    }
+    else if (e.key === 'Enter' && draft && tool === 'draw') finishDraft();
+    else if (e.key === 'Backspace' || e.key === 'Delete'){
+      if (draft && draft.pts.length){ e.preventDefault(); draft.pts.pop(); drawMarks(); renderLine(); }
+      else if (selItem >= 0){ e.preventDefault(); deleteItem(); }
+    }
+    else if (e.key === '+' || e.key === '=') T.zoomAt(base.clientWidth / 2, base.clientHeight / 2, 1);
+    else if (e.key === '-') T.zoomAt(base.clientWidth / 2, base.clientHeight / 2, -1);
+  });
+  $('undo').addEventListener('click', undo);
+
+  /* --- go ------------------------------------------------------------------ */
+  renderGh();
+  if (S.bounds) showFrame(); else T.render();
+  paint(); renderPublish();
+  loadPending().then(function(){ renderForm(); renderPublish(); });
+})();
+</script>
+</body></html>

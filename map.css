@@ -1,0 +1,20 @@
+/* Cofton — the hand-drawn layer, shared by index.html and edit.html.
+ * Each scenery kind in places.js is a class here: .sc-road, .sc-water, ...
+ * Colours come from the page's tokens (--ink, --land, --water, ...). */
+.sc path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sc-green path{fill:url(#hatch);stroke:var(--land);stroke-width:1.4}
+.sc-wood path{fill:url(#hatch2);stroke:var(--land);stroke-width:1.4}
+.sc-water path{fill:var(--water);stroke:var(--water-ink);stroke-width:1.4;opacity:.75}
+.sc-building path{fill:var(--line);stroke:var(--muted);stroke-width:.8}
+.sc-stream path{stroke:var(--water-ink);stroke-width:3}
+.sc-road path{stroke:var(--ink);stroke-width:2.6}
+.sc-lane path{stroke:var(--ink);stroke-width:1.5}
+.sc-track path{stroke:var(--muted);stroke-width:1.8;stroke-dasharray:7 6}
+.sc-rail path{stroke:var(--ink);stroke-width:3;stroke-dasharray:14 5}
+.sc-contour path{stroke:var(--line);stroke-width:1.4}
+.sc-bridge path{stroke:var(--ink);stroke-width:2.4}
+.sc .echo{fill:none!important;opacity:.4;transform:translate(1px,1.2px)}
+.sc .hit{fill:none!important;stroke:transparent!important;stroke-width:14!important;stroke-dasharray:none!important}
+
+.tiles{position:absolute;inset:0;overflow:hidden}
+.tile{position:absolute;max-width:none;user-select:none;-webkit-user-drag:none}
